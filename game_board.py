@@ -1,5 +1,6 @@
 from typing import Union, List, Tuple, Dict
 from random import randint
+import pprint
 
 # ASSUMPTION
 # Start Position
@@ -80,16 +81,26 @@ class Game:
     POSITION_MIN = 1
     POSITION_MAX = 100
 
-    def __str__(self):
-        printable_properties = self.__dict__.copy()
-        printable_properties["number_of_snakes"] = len(self.snakes)
-        printable_properties["number_of_ladders"] = len(self.ladders)
-        printable_properties.pop("snakes")
-        printable_properties.pop("ladders")
-        printable_properties.pop("players")
-        printable_properties.pop("activation_points_map")
-        printable_properties.pop("end_points")
-        return str(printable_properties)
+    ERROR_MESSAGE_ACTIVATION_DUPLICATED = (
+        "Activation point duplicated with other objects"
+    )
+    ERROR_MESSAGE_ACTIVATION_CLASH = (
+        "Some activation point sharing termination point with other objects"
+    )
+
+    class Stats:
+        def __init__(self):
+            self.game_number_of_rolls_to_win = 0
+            self.game_max_streak: List[int] = []
+            self.game_total_lucky_rolls = 0
+            self.game_total_unlucky_rolls = 0
+            self.game_total_distance_slid = 0
+            self.game_total_distance_climbed = 0
+            self.game_biggest_slid = 0
+            self.game_biggest_climb = 0
+
+        def __str__(self):
+            return pprint.pformat(self.__dict__.copy())
 
     def __init__(self):
         self.players = []
@@ -97,18 +108,11 @@ class Game:
         self.ladders = []
         self.activation_points_map: Dict[int:Player] = dict()
         self.end_points = []
-        self.reset_play_state()
+        self.curr_player_ndx = 0
+        self.stats = self.Stats()
 
     def reset_play_state(self) -> None:
         self.curr_player_ndx = 0
-        self.stat_number_of_rolls_to_win = 0
-        self.stat_max_streak: List[int] = []
-        self.game_total_lucky_rolls = 0
-        self.game_total_unlucky_rolls = 0
-        self.game_total_distance_slid = 0
-        self.game_total_distance_climbed = 0
-        self.game_biggest_slid = 0
-        self.game_biggest_climb = 0
 
     def add_player(self, player: Player) -> None:
         player.curr_position = self.POSITION_MIN
@@ -133,7 +137,7 @@ class Game:
         ] + list(self.activation_points_map.keys())
         print(f"{activation_points=}")
         if len(activation_points) != len(set(activation_points)):
-            return False, "Activation point clashing with other objects"
+            return False, self.ERROR_MESSAGE_ACTIVATION_DUPLICATED
 
         # Ensure that snakes and ladders, do not have start and end on the same position
         end_points = [
@@ -143,10 +147,7 @@ class Game:
         print(f"{end_points=}")
         print(f"{overlaps=}")
         if len(overlaps):
-            return (
-                False,
-                "Some activation point sharing termination point with other objects",
-            )
+            return (False, self.ERROR_MESSAGE_ACTIVATION_CLASH)
 
         new_activation_points = {
             game_object.activation_point: game_object for game_object in game_objects
@@ -187,23 +188,23 @@ class Game:
                 # print(f"{curr_player.name} earns a repeat die roll")
                 pass
 
-        self.stat_number_of_rolls_to_win = winner.number_of_rolls
-        self.record_game_stat()
+        self.record_game_stat(winner)
         return winner
 
-    def record_game_stat(self):
+    def record_game_stat(self, winner: Player):
+        self.stats.game_number_of_rolls_to_win = winner.number_of_rolls
         for player in self.players:
-            if sum(player.max_streak) > sum(self.stat_max_streak):
-                self.stat_max_streak = player.max_streak
-            self.game_total_lucky_rolls += player.number_of_lucky_rolls
-            self.game_total_unlucky_rolls += player.number_of_unlucky_rolls
-            self.game_total_distance_slid += player.total_distance_slid
-            self.game_total_distance_climbed += player.total_distance_climbed
-            self.game_biggest_slid = max(
-                player.max_distance_slid, self.game_biggest_slid
+            if sum(player.max_streak) > sum(self.stats.game_max_streak):
+                self.stats.game_max_streak = player.max_streak
+            self.stats.game_total_lucky_rolls += player.number_of_lucky_rolls
+            self.stats.game_total_unlucky_rolls += player.number_of_unlucky_rolls
+            self.stats.game_total_distance_slid += player.total_distance_slid
+            self.stats.game_total_distance_climbed += player.total_distance_climbed
+            self.stats.game_biggest_slid = max(
+                player.max_distance_slid, self.stats.game_biggest_slid
             )
-            self.game_biggest_climb = max(
-                player.max_distance_climbed, self.game_biggest_climb
+            self.stats.game_biggest_climb = max(
+                player.max_distance_climbed, self.stats.game_biggest_climb
             )
 
     def roll_die(self) -> int:
@@ -284,6 +285,7 @@ def main():
     ]  # TODO: Make this configurable
     isSuccess, err_message = game.add_game_objects(new_snakes + new_ladders)
     print(f"{isSuccess=} {err_message=}")
+    print(f"{game.stats}")
     print(f"{game}")
     game.add_player(player1)
     game.add_player(player2)
@@ -291,6 +293,7 @@ def main():
     winner = game.play()
     print(f"Winner = {winner}")
     print(f"{game}")
+    print(f"{game.stats}")
     print("Game finished")
 
 
