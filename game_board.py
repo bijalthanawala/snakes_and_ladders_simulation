@@ -1,6 +1,5 @@
-from typing import Union, List, Tuple
+from typing import Union, List, Tuple, Dict
 from random import randint
-from xmlrpc.client import Boolean
 
 # ASSUMPTION
 # Start Position
@@ -27,6 +26,12 @@ class Player:
         self.name: str = name
         self.curr_position: int = 0
         self.number_of_rolls: int = 0
+        self.number_of_lucky_rolls: int = 0
+        self.number_of_unlucky_rolls: int = 0
+        self.max_distance_slid: int = 0
+        self.max_distance_climbed: int = 0
+        self.total_distance_slid: int = 0
+        self.total_distance_climbed: int = 0
         self.max_streak: List[int] = []
 
     def __str__(self):
@@ -37,12 +42,13 @@ class GameObject:
     MIN_LENGTH = 10
 
     def __init__(self, high, low):
-        self.activation_point = None  # To be calculated in by child class
-        self.end_point = None  # To be calculated in by child class
+        self.activation_point = 0  # To be determined by the child class
+        self.end_point = 0  # To be determined by child class
         if high < low:
             raise Exception(f"High point must be larger than the low")
         if abs(low - high) < self.MIN_LENGTH:
             raise Exception(f"Object length must be minimum {self.MIN_LENGTH}")
+        self.distance = high - low
 
 
 class Snake(GameObject):
@@ -74,7 +80,6 @@ class Game:
 
     def __str__(self):
         printable_properties = self.__dict__.copy()
-        print(str(printable_properties))
         printable_properties["number_of_snakes"] = len(self.snakes)
         printable_properties["number_of_ladders"] = len(self.ladders)
         printable_properties.pop("snakes")
@@ -88,7 +93,7 @@ class Game:
         self.players = []
         self.snakes = []
         self.ladders = []
-        self.activation_points_map = dict()
+        self.activation_points_map: Dict[int:Player] = dict()
         self.end_points = []
         self.reset_play_state()
 
@@ -96,6 +101,12 @@ class Game:
         self.curr_player_ndx = 0
         self.stat_number_of_rolls_to_win = 0
         self.stat_max_streak: List[int] = []
+        self.game_total_lucky_rolls = 0
+        self.game_total_unlucky_rolls = 0
+        self.game_total_distance_slid = 0
+        self.game_total_distance_climbed = 0
+        self.game_biggest_slid = 0
+        self.game_biggest_climb = 0
 
     def add_player(self, player: Player) -> None:
         player.curr_position = self.POSITION_MIN
@@ -153,14 +164,14 @@ class Game:
             if winner:
                 break
             curr_player: Player = self.players[self.curr_player_ndx]
+
             die_roll = self.roll_die()
             self.move_player(curr_player, die_roll)
+
             curr_player.number_of_rolls += 1
             curr_streak.append(die_roll)
             if die_roll != self.DIE_ROLL_REPEAT:
-                print(
-                    f"{curr_streak=} ,  {curr_player.name}'s {curr_player.max_streak=}"
-                )
+                # print( f"{curr_streak=} ,  {curr_player.name}'s {curr_player.max_streak=}")
                 if sum(curr_streak) > sum(
                     curr_player.max_streak
                 ):  # TODO: How do we unit-test this logic?
@@ -168,15 +179,27 @@ class Game:
                 self.curr_player_ndx = (self.curr_player_ndx + 1) % len(self.players)
                 curr_streak = []
             else:
-                print(f"{curr_player.name} earns a repeat die roll")
+                # print(f"{curr_player.name} earns a repeat die roll")
+                pass
+
         self.stat_number_of_rolls_to_win = winner.number_of_rolls
-        self.record_stat_max_streak()
+        self.record_game_stat()
         return winner
 
-    def record_stat_max_streak(self):
+    def record_game_stat(self):
         for player in self.players:
             if sum(player.max_streak) > sum(self.stat_max_streak):
                 self.stat_max_streak = player.max_streak
+            self.game_total_lucky_rolls += player.number_of_lucky_rolls
+            self.game_total_unlucky_rolls += player.number_of_unlucky_rolls
+            self.game_total_distance_slid += player.total_distance_slid
+            self.game_total_distance_climbed += player.total_distance_climbed
+            self.game_biggest_slid = max(
+                player.max_distance_slid, self.game_biggest_slid
+            )
+            self.game_biggest_climb = max(
+                player.max_distance_climbed, self.game_biggest_climb
+            )
 
     def roll_die(self) -> int:
         return randint(self.DIE_ROLL_MIN, self.DIE_ROLL_MAX)
@@ -193,7 +216,25 @@ class Game:
             die_roll = self.POSITION_MAX - (player.curr_position + die_roll)
             print(f"{player.name} bouncing back by {die_roll}")
         player.curr_position += die_roll
-        print(f"{player.name} is at {player.curr_position} after {die_roll} moves")
+        # print(f"{player.name} is at {player.curr_position} after {die_roll} moves")
+        if player.curr_position in self.activation_points_map:
+            print(f"{player.name} is at {player.curr_position} after {die_roll} moves")
+            game_object: GameObject = self.activation_points_map[player.curr_position]
+            player.curr_position = game_object.end_point
+            if isinstance(game_object, Snake):
+                player.number_of_unlucky_rolls += 1
+                player.total_distance_slid += game_object.distance
+                player.max_distance_slid = max(
+                    game_object.distance, player.max_distance_slid
+                )
+                print(f"{player.name} moved to {player.curr_position} due to Snake")
+            elif isinstance(game_object, Ladder):
+                player.number_of_lucky_rolls += 1
+                player.total_distance_climbed += game_object.distance
+                player.max_distance_climbed = max(
+                    game_object.distance, player.max_distance_climbed
+                )
+                print(f"{player.name} moved to {player.curr_position} due to Ladder")
         return die_roll
 
 
@@ -210,10 +251,20 @@ def main():
     snakes = [
         Snake(high=27, low=5),
         Snake(high=15, low=5),
+        Snake(high=40, low=3),
+        Snake(high=43, low=18),
+        Snake(high=54, low=31),
+        Snake(high=66, low=45),
+        Snake(high=89, low=53),
     ]  # TODO: Make this configurable
     ladders = [
         Ladder(high=25, low=4),
+        Ladder(high=49, low=33),
+        Ladder(high=63, low=42),
         Ladder(high=46, low=13),
+        Ladder(high=69, low=50),
+        Ladder(high=81, low=62),
+        Ladder(high=92, low=74),
     ]  # TODO: Make this configurable
     isSuccess, err_message = game.add_game_objects(snakes + ladders)
     print(f"{isSuccess=} {err_message=}")
