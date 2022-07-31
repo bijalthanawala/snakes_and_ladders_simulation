@@ -45,7 +45,7 @@ class GameObject:
 
     def __init__(self, high, low):
         self.activation_point = 0  # To be determined by the child class
-        self.end_point = 0  # To be determined by child class
+        self.termination_point = 0  # To be determined by child class
         if high < low:
             raise Exception(self.EXCEPTION_HIGH_POINT_INVALID)
         if abs(low - high) < self.MIN_LENGTH:
@@ -57,7 +57,7 @@ class Snake(GameObject):
     def __init__(self, high, low):
         super().__init__(high, low)
         self.activation_point = high
-        self.end_point = low
+        self.termination_point = low
 
     def __str__(self):
         return str(self.__dict__)
@@ -67,7 +67,7 @@ class Ladder(GameObject):
     def __init__(self, high, low):
         super().__init__(high, low)
         self.activation_point = low
-        self.end_point = high
+        self.termination_point = high
 
     def __str__(self):
         return str(self.__dict__)
@@ -137,13 +137,16 @@ class Game:
 
         # Ensure that snakes and ladders, do not have start and end on the same position
         end_points = [
-            game_object.end_point for game_object in game_objects
+            game_object.termination_point for game_object in game_objects
         ] + self.end_points
         overlaps = set(activation_points) & set(end_points)
         print(f"{end_points=}")
         print(f"{overlaps=}")
         if len(overlaps):
-            return False, "Some activation point sharing end_point with other objects"
+            return (
+                False,
+                "Some activation point sharing termination point with other objects",
+            )
 
         new_activation_points = {
             game_object.activation_point: game_object for game_object in game_objects
@@ -222,7 +225,7 @@ class Game:
         if player.curr_position in self.activation_points_map:
             print(f"{player.name} is at {player.curr_position} after {die_roll} moves")
             game_object: GameObject = self.activation_points_map[player.curr_position]
-            player.curr_position = game_object.end_point
+            player.curr_position = game_object.termination_point
             if isinstance(game_object, Snake):
                 player.number_of_unlucky_rolls += 1
                 player.total_distance_slid += game_object.distance

@@ -17,10 +17,10 @@ def test_GameObject_high_point_invalid():
 def test_Snake_good():
     snake = Snake(high=50, low=30)
     assert snake.activation_point == 50
-    assert snake.end_point == 30
+    assert snake.termination_point == 30
 
 
 def test_Ladder_good():
     ladder = Ladder(high=50, low=30)
     assert ladder.activation_point == 30
-    assert ladder.end_point == 50
+    assert ladder.termination_point == 50
