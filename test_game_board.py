@@ -1,5 +1,5 @@
 import pytest
-from game_board import GameObject, Snake, Ladder
+from snake_ladder_simulation import GameObject, Snake, Ladder
 
 
 def test_GameObject_short():
