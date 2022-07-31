@@ -40,14 +40,16 @@ class Player:
 
 class GameObject:
     MIN_LENGTH = 10
+    EXCEPTION_MIN_LENGTH = "Length of the object does not match the minimum criteria"
+    EXCEPTION_HIGH_POINT_INVALID = "High point must be larger than the low"
 
     def __init__(self, high, low):
         self.activation_point = 0  # To be determined by the child class
         self.end_point = 0  # To be determined by child class
         if high < low:
-            raise Exception(f"High point must be larger than the low")
+            raise Exception(self.EXCEPTION_HIGH_POINT_INVALID)
         if abs(low - high) < self.MIN_LENGTH:
-            raise Exception(f"Object length must be minimum {self.MIN_LENGTH}")
+            raise Exception(self.EXCEPTION_MIN_LENGTH)
         self.distance = high - low
 
 
