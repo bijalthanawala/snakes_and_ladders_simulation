@@ -1,16 +1,7 @@
 from typing import Union, List, Tuple, Dict
+from constants import Constants as Const
 from random import randint
 import pprint
-
-# ASSUMPTION
-# Start Position
-# It appears typo in the spec, the start position is mistakenly mentioned to be 0
-# Looking at the board diagram it should have been 1
-
-#
-# The longest turn
-# The longest turn is recorded such that it could be of any of the players, not necessarily the winner
-#
 
 # SPECIAL CASES
 #
@@ -19,13 +10,12 @@ import pprint
 # eg. a player on 97 (who needs 3 to win) rolls 5 will bounce back to 98 (100-2)
 
 # TODO: Decide to type hint all the way or not. Comment accordingly
-# Concious decision to not use type hint. My own opinion, would prefer to but not in this small exercise. Happy to adapt to team's adapter practices
 
 
 class Player:
     def __init__(self, name: str):
         self.name: str = name
-        self.curr_position: int = 0
+        self.curr_position: int = Const.PLAYER_START_POSITION
         self.number_of_rolls: int = 0
         self.number_of_lucky_rolls: int = 0
         self.number_of_unlucky_rolls: int = 0
@@ -36,50 +26,57 @@ class Player:
         self.max_streak: List[int] = []
 
     def __str__(self):
-        return str(self.__dict__)
+        return pprint.pformat(self.__dict__.copy())
 
 
 class GameObject:
-    MIN_LENGTH = 10
-    EXCEPTION_MIN_LENGTH = "Length of the object does not match the minimum criteria"
-    EXCEPTION_HIGH_POINT_INVALID = "High point must be larger than the low"
+    EXCEPTION_INVALID_POSITION = "Invalid position"
+    EXCEPTION_SHORT_OBJECT = "Length of the object must span at least one row"
+    EXCEPTION_INVERSE_OBJECT = "Object is inverse"
 
-    def __init__(self, high, low):
-        self.activation_point = 0  # To be determined by the child class
-        self.termination_point = 0  # To be determined by child class
-        if high < low:
-            raise Exception(self.EXCEPTION_HIGH_POINT_INVALID)
-        if abs(low - high) < self.MIN_LENGTH:
-            raise Exception(self.EXCEPTION_MIN_LENGTH)
-        self.distance = high - low
+    def __init__(self, activation_point, termination_point):
+        if (
+            activation_point < Const.BOARD_POSITION_MIN
+            or activation_point > Const.BOARD_POSITION_MAX
+        ):
+            raise Exception(self.EXCEPTION_INVALID_POSITION)
+        if (
+            termination_point < Const.BOARD_POSITION_MIN
+            or termination_point > Const.BOARD_POSITION_MAX
+        ):
+            raise Exception(self.EXCEPTION_INVALID_POSITION)
+        if int((activation_point - 1) / Const.BOARD_ROW_SIZE) == int(
+            (termination_point - 1) / Const.BOARD_ROW_SIZE
+        ):
+            raise Exception(self.EXCEPTION_SHORT_OBJECT)
+        self.activation_point = activation_point
+        self.termination_point = termination_point
+        self.distance = abs(self.activation_point - self.termination_point)
+
+    def __str__(self):
+        return pprint.pformat(self.__dict__.copy())
 
 
 class Snake(GameObject):
-    def __init__(self, high, low):
-        super().__init__(high, low)
-        self.activation_point = high
-        self.termination_point = low
-
-    def __str__(self):
-        return str(self.__dict__)
+    def __init__(self, mouth, tail):
+        super().__init__(activation_point=mouth, termination_point=tail)
+        if mouth < tail:
+            raise Exception(self.EXCEPTION_INVERSE_OBJECT)
+        # self.luck_range_top = self.activation_point+2 if self.activation_point+2<=100 else 100
+        # self.luck_range_end = self.activation_point-2 if self.activation_point-2>=1 else 1
 
 
 class Ladder(GameObject):
-    def __init__(self, high, low):
-        super().__init__(high, low)
-        self.activation_point = low
-        self.termination_point = high
-
-    def __str__(self):
-        return str(self.__dict__)
+    def __init__(self, top, bottom):
+        super().__init__(activation_point=bottom, termination_point=top)
+        if top < bottom:
+            raise Exception(self.EXCEPTION_INVERSE_OBJECT)
 
 
 class Game:
     DIE_ROLL_MIN = 1
     DIE_ROLL_MAX = 6
     DIE_ROLL_REPEAT = DIE_ROLL_MAX
-    POSITION_MIN = 1
-    POSITION_MAX = 100
 
     ERROR_MESSAGE_ACTIVATION_DUPLICATED = (
         "Activation point duplicated with other objects"
@@ -115,7 +112,6 @@ class Game:
         self.curr_player_ndx = 0
 
     def add_player(self, player: Player) -> None:
-        player.curr_position = self.POSITION_MIN
         self.players.append(player)
 
     def add_game_objects(self, game_objects: List[GameObject]) -> Tuple[bool, str]:
@@ -123,7 +119,11 @@ class Game:
         for go in game_objects:
             print(go)
 
-        # Ensure that snakes and ladders, do not start at the same position
+        # TODO: Ensure only the Snake or the Ladder (and the parent) objects are
+        # added to the game
+
+        # Ensure that the snakes and the ladders to be placed on the board,
+        # do not start at the same position
         activation_points = [
             game_object.activation_point for game_object in game_objects
         ] + list(self.activation_points_map.keys())
@@ -131,7 +131,8 @@ class Game:
         if len(activation_points) != len(set(activation_points)):
             return False, self.ERROR_MESSAGE_ACTIVATION_DUPLICATED
 
-        # Ensure that snakes and ladders, do not have start and end on the same position
+        # Ensure that the snakes and the ladders to be placed on the board,
+        # do not have start and end on the same position
         termination_points = [
             game_object.termination_point for game_object in game_objects
         ] + self.termination_points
@@ -212,14 +213,14 @@ class Game:
 
     def spot_winner(self) -> Union[Player, None]:  # TODO: test
         for player in self.players:
-            if player.curr_position == self.POSITION_MAX:
+            if player.curr_position == Const.BOARD_POSITION_MAX:
                 return player
         return None
 
     def move_player(self, player, die_roll) -> int:  # TODO: test
-        if player.curr_position + die_roll > self.POSITION_MAX:
+        if player.curr_position + die_roll > Const.BOARD_POSITION_MAX:
             # bounce back
-            die_roll = self.POSITION_MAX - (player.curr_position + die_roll)
+            die_roll = Const.BOARD_POSITION_MAX - (player.curr_position + die_roll)
             print(f"{player.name} bouncing back by {die_roll}")
         player.curr_position += die_roll
         # print(f"{player.name} is at {player.curr_position} after {die_roll} moves")

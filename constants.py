@@ -1,0 +1,6 @@
+class Constants:
+    BOARD_POSITION_MIN = 1
+    BOARD_POSITION_MAX = 100
+    BOARD_ROW_SIZE = 10
+
+    PLAYER_START_POSITION = 0

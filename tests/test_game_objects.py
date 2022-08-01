@@ -3,34 +3,56 @@ from snake_ladder_simulation import GameObject, Snake, Ladder, Game
 
 
 class Test_add_game_objects:
-    def test_GameObject_short(self):
-        with pytest.raises(Exception) as excinfo:
-            gameobject = GameObject(high=50, low=45)
-        assert GameObject.EXCEPTION_MIN_LENGTH in str(excinfo.value)
-
-    def test_GameObject_high_point_invalid(self):
-        with pytest.raises(Exception) as excinfo:
-            gameobject = GameObject(high=30, low=50)
-        assert GameObject.EXCEPTION_HIGH_POINT_INVALID in str(excinfo.value)
-
-    def test_Snake_good(self):
-        snake = Snake(high=50, low=30)
-        assert snake.activation_point == 50
-        assert snake.termination_point == 30
-
-    def test_Ladder_good(self):
-        ladder = Ladder(high=50, low=30)
-        assert ladder.activation_point == 30
-        assert ladder.termination_point == 50
-
     @pytest.fixture
     def game(self):
         return Game()
 
+    def test_valid_gameobject_longest(self):
+        try:
+            GameObject(activation_point=51, termination_point=61)
+        except Exception as exception:
+            assert False, f"GameObject instantiation failed: {exception}"
+
+    def test_valid_gameobject_shortest(self):
+        try:
+            GameObject(activation_point=60, termination_point=61)
+        except Exception as exception:
+            assert False, f"GameObject instantiation failed: {exception}"
+
+    def test_invalid_gameobject_longest(self):
+        with pytest.raises(Exception) as excinfo:
+            GameObject(activation_point=51, termination_point=59)
+        assert GameObject.EXCEPTION_SHORT_OBJECT in str(excinfo.value)
+
+    def test_invalid_gameobject_shortest(self):
+        with pytest.raises(Exception) as excinfo:
+            GameObject(activation_point=59, termination_point=60)
+        assert GameObject.EXCEPTION_SHORT_OBJECT in str(excinfo.value)
+
+    def test_valid_snake(self):
+        snake = Snake(mouth=50, tail=30)
+        assert snake.activation_point == 50
+        assert snake.termination_point == 30
+
+    def test_valid_ladder(self):
+        ladder = Ladder(bottom=30, top=50)
+        assert ladder.activation_point == 30
+        assert ladder.termination_point == 50
+
+    def test_invalid_snake_inverse(self):
+        with pytest.raises(Exception) as excinfo:
+            snake = Snake(mouth=30, tail=50)
+        assert Snake.EXCEPTION_INVERSE_OBJECT in str(excinfo.value)
+
+    def test_invalid_ladder_inverse(self):
+        with pytest.raises(Exception) as excinfo:
+            ladder = Ladder(bottom=50, top=30)
+        assert Ladder.EXCEPTION_INVERSE_OBJECT in str(excinfo.value)
+
     def test_add_game_objects(self, game):
         isSuccess, _ = game.add_game_objects(
             [
-                Snake(high=50, low=30),
+                Snake(mouth=50, tail=30),
             ]
         )
         assert isSuccess == True
@@ -38,7 +60,7 @@ class Test_add_game_objects:
         assert len(game.ladders) == 0
         isSuccess, _ = game.add_game_objects(
             [
-                Ladder(high=40, low=20),
+                Ladder(top=40, bottom=20),
             ]
         )
         assert isSuccess == True
@@ -48,9 +70,9 @@ class Test_add_game_objects:
     @pytest.mark.parametrize(
         "game_objects_with_same_activation_points",
         [
-            [Snake(high=50, low=30), Snake(high=50, low=20)],
-            [Ladder(high=50, low=30), Ladder(high=70, low=30)],
-            [Snake(high=50, low=30), Ladder(high=60, low=50)],
+            [Snake(mouth=50, tail=30), Snake(mouth=50, tail=20)],
+            [Ladder(top=50, bottom=30), Ladder(top=70, bottom=30)],
+            [Snake(mouth=50, tail=30), Ladder(top=60, bottom=50)],
         ],
     )
     def test_add_game_objects_with_same_initiation_points(
@@ -65,8 +87,8 @@ class Test_add_game_objects:
     @pytest.mark.parametrize(
         "game_objects_with_same_initiation_and_termination_points",
         [
-            [Snake(high=50, low=30), Ladder(high=60, low=30)],
-            [Snake(high=50, low=30), Ladder(high=50, low=10)],
+            [Snake(mouth=50, tail=30), Ladder(top=60, bottom=30)],
+            [Snake(mouth=50, tail=30), Ladder(top=50, bottom=10)],
         ],
     )
     def test_add_game_objects_snake_and_ladder_with_same_initiation_and_termination_points(
