@@ -107,7 +107,7 @@ class Game:
         self.snakes = []
         self.ladders = []
         self.activation_points_map: Dict[int:Player] = dict()
-        self.end_points = []
+        self.termination_points = []
         self.curr_player_ndx = 0
         self.stats = self.Stats()
 
@@ -117,14 +117,6 @@ class Game:
     def add_player(self, player: Player) -> None:
         player.curr_position = self.POSITION_MIN
         self.players.append(player)
-
-    def add_game_object(self, game_object: GameObject) -> None:
-        if isinstance(game_object, Snake):
-            print("Adding snake")
-            self.snakes.append(game_object)
-        if isinstance(game_object, Ladder):
-            print("Adding ladder")
-            self.ladders.append(game_object)
 
     def add_game_objects(self, game_objects: List[GameObject]) -> Tuple[bool, str]:
 
@@ -140,22 +132,30 @@ class Game:
             return False, self.ERROR_MESSAGE_ACTIVATION_DUPLICATED
 
         # Ensure that snakes and ladders, do not have start and end on the same position
-        end_points = [
+        termination_points = [
             game_object.termination_point for game_object in game_objects
-        ] + self.end_points
-        overlaps = set(activation_points) & set(end_points)
-        print(f"{end_points=}")
+        ] + self.termination_points
+        overlaps = set(activation_points) & set(termination_points)
+        print(f"{termination_points=}")
         print(f"{overlaps=}")
         if len(overlaps):
             return (False, self.ERROR_MESSAGE_ACTIVATION_CLASH)
 
+        # Update internal records of activation and termination points
         new_activation_points = {
             game_object.activation_point: game_object for game_object in game_objects
         }
         self.activation_points_map.update(new_activation_points)
-        self.end_points = end_points
+        self.termination_points = termination_points
+
+        # Finally add all objects to the board
         for game_object in game_objects:
-            self.add_game_object(game_object)
+            if isinstance(game_object, Snake):
+                print("Adding snake")
+                self.snakes.append(game_object)
+            if isinstance(game_object, Ladder):
+                print("Adding ladder")
+                self.ladders.append(game_object)
 
         return True, ""
 
