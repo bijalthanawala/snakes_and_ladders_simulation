@@ -245,54 +245,37 @@ class Game:
 
 
 def main():
-    print("Starting...")
-    player1 = Player("P1")
-    print(player1)
-    player2 = Player("P2")
-    print(player2)
-    player3 = Player("P3")
-    print(player3)
+    print("Game starting...")
     game = Game()
-    # print(f"{game}")
+    game.add_player(Player("P1"))
+    game.add_player(Player("P2"))
+    game.add_player(Player("P3"))
     snakes = [
-        Snake(high=27, low=5),
-        Snake(high=15, low=5),
-        Snake(high=40, low=3),
-        Snake(high=43, low=18),
-        Snake(high=54, low=31),
-        Snake(high=66, low=45),
-        Snake(high=89, low=53),
+        Snake(mouth=27, tail=5),
+        Snake(mouth=15, tail=5),
+        Snake(mouth=40, tail=3),
+        Snake(mouth=43, tail=18),
+        Snake(mouth=54, tail=31),
+        Snake(mouth=66, tail=45),
+        Snake(mouth=89, tail=53),
     ]  # TODO: Make this configurable
     ladders = [
-        Ladder(high=25, low=4),
-        Ladder(high=49, low=33),
-        Ladder(high=63, low=42),
-        Ladder(high=46, low=13),
-        Ladder(high=69, low=50),
-        Ladder(high=81, low=62),
-        Ladder(high=92, low=74),
+        Ladder(top=25, bottom=4),
+        Ladder(top=49, bottom=33),
+        Ladder(top=63, bottom=42),
+        Ladder(top=46, bottom=13),
+        Ladder(top=69, bottom=50),
+        Ladder(top=81, bottom=62),
+        Ladder(top=92, bottom=74),
     ]  # TODO: Make this configurable
     isSuccess, err_message = game.add_game_objects(snakes + ladders)
-    print(f"{isSuccess=} {err_message=}")
-    print(f"{game}")
-    new_snakes = [
-        Snake(high=30, low=5),
-        Snake(high=20, low=5),
-    ]  # TODO: Make this configurable
-    new_ladders = [
-        Ladder(high=40, low=24),
-        Ladder(high=34, low=3),
-    ]  # TODO: Make this configurable
-    isSuccess, err_message = game.add_game_objects(new_snakes + new_ladders)
-    print(f"{isSuccess=} {err_message=}")
-    print(f"{game.stats}")
-    print(f"{game}")
-    game.add_player(player1)
-    game.add_player(player2)
-    game.add_player(player3)
+    if not isSuccess:
+        print(f"Error: {err_message}")
+        return
     winner = game.play()
+    for player in game.players:
+        print(player)
     print(f"Winner = {winner}")
-    print(f"{game}")
     print(f"{game.stats}")
     print("Game finished")
 
