@@ -1,26 +1,26 @@
-class EXCEPTION_OBJECT_INVALID_POSITION(Exception):
-    message = "Object extends outside the range of the board"
+class EXCEPTION_ARTEFACT_INVALID_POSITION(Exception):
+    message = "Artefact extends outside the range of the board"
 
     def __init__(self):
         super().__init__(self.message)
 
 
-class EXCEPTION_OBJECT_LONG(Exception):
-    message = "Object spans the entire board"
+class EXCEPTION_ARTEFACT_LONG(Exception):
+    message = "Artefact spans the entire board"
 
     def __init__(self):
         super().__init__(self.message)
 
 
-class EXCEPTION_OBJECT_SHORT(Exception):
-    message = "Length of the object must span at least one row"
+class EXCEPTION_ARTEFACT_SHORT(Exception):
+    message = "Length of the artefact must span at least one row"
 
     def __init__(self):
         super().__init__(self.message)
 
 
-class EXCEPTION_OBJECT_INVERSE(Exception):
-    message = "Object is inverse"
+class EXCEPTION_ARTEFACT_INVERSE(Exception):
+    message = "Artefact is inverse"
 
     def __init__(self):
         super().__init__(self.message)

@@ -1,10 +1,10 @@
 from typing import Union, List, Tuple, Dict
 from constants import Constants as Const
 from game_exceptions import (
-    EXCEPTION_OBJECT_INVALID_POSITION,
-    EXCEPTION_OBJECT_LONG,
-    EXCEPTION_OBJECT_SHORT,
-    EXCEPTION_OBJECT_INVERSE,
+    EXCEPTION_ARTEFACT_INVALID_POSITION,
+    EXCEPTION_ARTEFACT_LONG,
+    EXCEPTION_ARTEFACT_SHORT,
+    EXCEPTION_ARTEFACT_INVERSE,
     EXCEPTION_SNAKE_AT_WINNING_POSITION,
 )
 from random import randint
@@ -30,14 +30,14 @@ class Player:
         return pprint.pformat(self.__dict__.copy())
 
 
-class GameObject:
+class GameArtefact:
     def __init__(self, activation_point, termination_point):
-        self._validate_gameobject(activation_point, termination_point)
+        self._validate_gameartefact(activation_point, termination_point)
         self.activation_point = activation_point
         self.termination_point = termination_point
         self.distance = abs(self.activation_point - self.termination_point)
 
-    def _validate_gameobject(
+    def _validate_gameartefact(
         self, activation_point, termination_point
     ):  # TODO: Check if leading _ (undserscore) is a good convention
         if (
@@ -46,38 +46,38 @@ class GameObject:
             or termination_point < Const.BOARD_POSITION_MIN
             or termination_point > Const.BOARD_POSITION_MAX
         ):
-            raise EXCEPTION_OBJECT_INVALID_POSITION
+            raise EXCEPTION_ARTEFACT_INVALID_POSITION
 
         if int((activation_point - 1) / Const.BOARD_ROW_SIZE) == int(
             (termination_point - 1) / Const.BOARD_ROW_SIZE
         ):
-            raise EXCEPTION_OBJECT_SHORT
+            raise EXCEPTION_ARTEFACT_SHORT
 
         if (
             activation_point == Const.BOARD_POSITION_MIN
             and termination_point == Const.BOARD_POSITION_MAX
         ):
-            raise EXCEPTION_OBJECT_LONG
+            raise EXCEPTION_ARTEFACT_LONG
 
     def __str__(self):
         return pprint.pformat(self.__dict__.copy())
 
 
-class Snake(GameObject):
+class Snake(GameArtefact):
     def __init__(self, mouth, tail):
         super().__init__(activation_point=mouth, termination_point=tail)
         if mouth < tail:
-            raise EXCEPTION_OBJECT_INVERSE
+            raise EXCEPTION_ARTEFACT_INVERSE
         if mouth == Const.BOARD_POSITION_MAX:
             raise EXCEPTION_SNAKE_AT_WINNING_POSITION
         self.mouth = mouth
 
 
-class Ladder(GameObject):
+class Ladder(GameArtefact):
     def __init__(self, top, bottom):
         super().__init__(activation_point=bottom, termination_point=top)
         if top < bottom:
-            raise EXCEPTION_OBJECT_INVERSE
+            raise EXCEPTION_ARTEFACT_INVERSE
 
 
 class Game:
@@ -86,12 +86,12 @@ class Game:
     DIE_ROLL_REPEAT = DIE_ROLL_MAX
 
     ERROR_MESSAGE_ACTIVATION_DUPLICATED = (
-        "Activation point duplicated with other objects"
+        "Activation point duplicated with other artefacts"
     )
     ERROR_MESSAGE_ACTIVATION_CLASH = (
-        "Some activation point sharing termination point with other objects"
+        "Some activation point sharing termination point with other artefacts"
     )
-    ERROR_MESSAGE_UNSUPPORTED_GAME_OBJECT = "Unsupported game object"
+    ERROR_MESSAGE_UNSUPPORTED_GAME_ARTEFACT = "Unsupported game artefact"
 
     class Stats:
         def __init__(self):
@@ -123,18 +123,17 @@ class Game:
     def add_player(self, player: Player) -> None:
         self.players.append(player)
 
-    def add_game_objects(self, game_objects: List[GameObject]) -> Tuple[bool, str]:
+    def add_game_artefacts(
+        self, game_artefacts: List[GameArtefact]
+    ) -> Tuple[bool, str]:
 
-        for go in game_objects:
-            print(go)
-
-        # TODO: Ensure only the Snake or the Ladder (and the parent) objects are
-        # added to the game
+        for ga in game_artefacts:
+            print(ga)
 
         # Ensure that the snakes and the ladders to be placed on the board,
         # do not start at the same position
         activation_points = [
-            game_object.activation_point for game_object in game_objects
+            game_artefact.activation_point for game_artefact in game_artefacts
         ] + list(self.activation_points_map.keys())
         print(f"{activation_points=}")
         if len(activation_points) != len(set(activation_points)):
@@ -142,9 +141,9 @@ class Game:
 
         # Ensure that the snakes and the ladders to be placed on the board,
         # do not have start and end on the same position
-        # TODO: Avoid re-iterating over gameobjects
+        # TODO: Avoid re-iterating over gameartefacts
         termination_points = [
-            game_object.termination_point for game_object in game_objects
+            game_artefact.termination_point for game_artefact in game_artefacts
         ] + self.termination_points
         overlaps = set(activation_points) & set(termination_points)
         print(f"{termination_points=}")
@@ -154,38 +153,39 @@ class Game:
 
         # Update internal records of activation, termination and lucky positions
         new_activation_points = {
-            game_object.activation_point: game_object for game_object in game_objects
+            game_artefact.activation_point: game_artefact
+            for game_artefact in game_artefacts
         }
         self.activation_points_map.update(new_activation_points)
         self.termination_points = termination_points
 
         # record lucky positions 1 or 2 positions aways from snakes
         # TODO: Exclude positions that has another snake on it
-        # TODO: Avoid re-iterating over gameobjects
-        for game_object in game_objects:
-            if isinstance(game_object, Snake):
-                if game_object.mouth + 1 <= Const.BOARD_POSITION_MAX:
-                    self.lucky_positions.add(game_object.mouth + 1)
-                    if game_object.mouth + 2 <= Const.BOARD_POSITION_MAX:
-                        self.lucky_positions.add(game_object.mouth + 2)
-                if game_object.mouth - 1 >= Const.BOARD_POSITION_MIN:
-                    self.lucky_positions.add(game_object.mouth - 1)
-                    if game_object.mouth - 2 >= Const.BOARD_POSITION_MIN:
-                        self.lucky_positions.add(game_object.mouth - 2)
+        # TODO: Avoid re-iterating over gameartefacts
+        for game_artefact in game_artefacts:
+            if isinstance(game_artefact, Snake):
+                if game_artefact.mouth + 1 <= Const.BOARD_POSITION_MAX:
+                    self.lucky_positions.add(game_artefact.mouth + 1)
+                    if game_artefact.mouth + 2 <= Const.BOARD_POSITION_MAX:
+                        self.lucky_positions.add(game_artefact.mouth + 2)
+                if game_artefact.mouth - 1 >= Const.BOARD_POSITION_MIN:
+                    self.lucky_positions.add(game_artefact.mouth - 1)
+                    if game_artefact.mouth - 2 >= Const.BOARD_POSITION_MIN:
+                        self.lucky_positions.add(game_artefact.mouth - 2)
         print(f"{self.lucky_positions=}")
 
-        # Finally add all objects to the board
-        for game_object in game_objects:
-            if isinstance(game_object, Snake):
+        # Finally add all artefacts to the board
+        for game_artefact in game_artefacts:
+            if isinstance(game_artefact, Snake):
                 print("Adding snake")
-                self.snakes.append(game_object)
-            elif isinstance(game_object, Ladder):
+                self.snakes.append(game_artefact)
+            elif isinstance(game_artefact, Ladder):
                 print("Adding ladder")
-                self.ladders.append(game_object)
+                self.ladders.append(game_artefact)
             else:
                 return (
                     False,
-                    self.ERROR_MESSAGE_UNSUPPORTED_GAME_OBJECT,
+                    self.ERROR_MESSAGE_UNSUPPORTED_GAME_ARTEFACT,
                 )  # TODO: Test this
 
         return True, ""
@@ -278,20 +278,22 @@ class Game:
 
         if player.curr_position in self.activation_points_map:
             print(f"{player.name} is at {player.curr_position} ({die_roll=})")
-            game_object: GameObject = self.activation_points_map[player.curr_position]
-            player.curr_position = game_object.termination_point
-            if isinstance(game_object, Snake):
+            game_artefact: GameArtefact = self.activation_points_map[
+                player.curr_position
+            ]
+            player.curr_position = game_artefact.termination_point
+            if isinstance(game_artefact, Snake):
                 player.number_of_unlucky_rolls += 1
-                player.total_distance_slid += game_object.distance
+                player.total_distance_slid += game_artefact.distance
                 player.max_distance_slid = max(
-                    game_object.distance, player.max_distance_slid
+                    game_artefact.distance, player.max_distance_slid
                 )
                 print(f"{player.name} moved to {player.curr_position} due to Snake")
-            elif isinstance(game_object, Ladder):
+            elif isinstance(game_artefact, Ladder):
                 player.number_of_lucky_rolls += 1
-                player.total_distance_climbed += game_object.distance
+                player.total_distance_climbed += game_artefact.distance
                 player.max_distance_climbed = max(
-                    game_object.distance, player.max_distance_climbed
+                    game_artefact.distance, player.max_distance_climbed
                 )
                 print(f"{player.name} moved to {player.curr_position} due to Ladder")
         return die_roll
@@ -321,7 +323,7 @@ def main():
         Ladder(top=81, bottom=62),
         Ladder(top=92, bottom=74),
     ]  # TODO: Make this configurable
-    isSuccess, err_message = game.add_game_objects(snakes + ladders)
+    isSuccess, err_message = game.add_game_artefacts(snakes + ladders)
     if not isSuccess:
         print(f"Error: {err_message}")
         return
