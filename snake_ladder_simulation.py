@@ -1,4 +1,4 @@
-from typing import Union, List, Tuple, Dict
+from typing import Union, List, Tuple, Dict, Set
 from constants import Constants as Const
 from game_exceptions import (
     EXCEPTION_ARTEFACT_INVALID_POSITION,
@@ -16,6 +16,9 @@ import pprint
 class Player:
     def __init__(self, name: str):
         self.name: str = name
+        self.init_player_stats()
+
+    def init_player_stats(self):
         self.curr_position: int = Const.PLAYER_START_POSITION
         self.number_of_rolls: int = 0
         self.number_of_lucky_rolls: int = 0
@@ -92,38 +95,47 @@ class Game:
 
     class Stats:
         def __init__(self):
-            self.game_number_of_rolls_to_win = 0
+            self.init_game_stats()
+
+        def init_game_stats(self):
+            self.game_number_of_rolls_to_win: int = 0
             self.game_max_streak: List[int] = []
-            self.game_total_lucky_rolls = 0
-            self.game_total_unlucky_rolls = 0
-            self.game_total_distance_slid = 0
-            self.game_total_distance_climbed = 0
-            self.game_biggest_slid = 0
-            self.game_biggest_climb = 0
+            self.game_total_lucky_rolls: int = 0
+            self.game_total_unlucky_rolls: int = 0
+            self.game_total_distance_slid: int = 0
+            self.game_total_distance_climbed: int = 0
+            self.game_biggest_slid: int = 0
+            self.game_biggest_climb: int = 0
 
         def __str__(self):
             return pprint.pformat(self.__dict__.copy())
 
     def __init__(self):
-        self.players = []
-        self.snakes = []
-        self.ladders = []
+        self.players: List[Player] = []
+        self.snakes: List[Snake] = []
+        self.ladders: List[Ladder] = []
         self.activation_points_map: Dict[int:Player] = dict()
-        self.termination_points = []
-        self.lucky_positions = set()
-        self.curr_player_ndx = 0
-        self.stats = self.Stats()
+        self.termination_points: List[int] = []
+        self.lucky_positions: Set(int) = set()
+        self.curr_player_ndx: int = 0
+        self.stats: self.Stat = self.Stats()
 
-    def reset_play_state(self) -> None:
+    def reset_game_state(self) -> None:
         self.curr_player_ndx = 0
+        self.stats.init_game_stats()
+
+        player: Player
+        for player in self.players:
+            player.init_player_stats()
 
     def add_player(self, player: Player) -> None:
         self.players.append(player)
 
     def add_artefacts(self, artefacts: List[Artefact]) -> Tuple[bool, str]:
+        artefact: Artefact  # Used in for loops
 
-        for ga in artefacts:
-            print(ga)
+        for artefact in artefacts:
+            print(artefact)
 
         # Ensure that the snakes and the ladders to be placed on the board,
         # do not start at the same position
@@ -194,6 +206,7 @@ class Game:
             winner = self.spot_winner()
             if winner:
                 break
+
             curr_player: Player = self.players[self.curr_player_ndx]
 
             die_roll = self.roll_die()
@@ -218,6 +231,7 @@ class Game:
 
     def record_game_stat(self, winner: Player):
         self.stats.game_number_of_rolls_to_win = winner.number_of_rolls
+        player: Player
         for player in self.players:
             if sum(player.max_streak) > sum(self.stats.game_max_streak):
                 self.stats.game_max_streak = player.max_streak
@@ -236,6 +250,7 @@ class Game:
         return randint(Const.DIE_ROLL_MIN, Const.DIE_ROLL_MAX)
 
     def spot_winner(self) -> Union[Player, None]:  # TODO: test
+        player: Player
         for player in self.players:
             if player.curr_position == Const.BOARD_POSITION_MAX:
                 return player
