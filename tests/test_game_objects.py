@@ -5,6 +5,7 @@ from game_exceptions import (
     EXCEPTION_OBJECT_SHORT,
     EXCEPTION_OBJECT_LONG,
     EXCEPTION_OBJECT_INVERSE,
+    EXCEPTION_SNAKE_AT_WINNING_POSITION,
 )
 from snake_ladder_simulation import GameObject, Snake, Ladder, Game
 
@@ -89,6 +90,11 @@ class Test_game_objects:
         with pytest.raises(Exception) as excinfo:
             _ = Ladder(bottom=50, top=30)
         assert excinfo.type == EXCEPTION_OBJECT_INVERSE
+
+    def test_invalid_snake_placed_at_winning_position(self):
+        with pytest.raises(Exception) as excinfo:
+            _ = Snake(mouth=Const.BOARD_POSITION_MAX, tail=50)
+        assert excinfo.type == EXCEPTION_SNAKE_AT_WINNING_POSITION
 
     def test_add_game_objects(self, game):
         isSuccess, _ = game.add_game_objects(

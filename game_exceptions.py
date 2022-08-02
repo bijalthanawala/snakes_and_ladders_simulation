@@ -24,3 +24,10 @@ class EXCEPTION_OBJECT_INVERSE(Exception):
 
     def __init__(self):
         super().__init__(self.message)
+
+
+class EXCEPTION_SNAKE_AT_WINNING_POSITION(Exception):
+    message = "Snake is at winning position"
+
+    def __init__(self):
+        super().__init__(self.message)

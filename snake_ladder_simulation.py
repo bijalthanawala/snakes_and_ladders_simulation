@@ -5,18 +5,10 @@ from game_exceptions import (
     EXCEPTION_OBJECT_LONG,
     EXCEPTION_OBJECT_SHORT,
     EXCEPTION_OBJECT_INVERSE,
+    EXCEPTION_SNAKE_AT_WINNING_POSITION,
 )
 from random import randint
 import pprint
-
-# SPECIAL CASES
-#
-# Bounce back:
-# If a player rolls more than the last n required to win, will bounce back
-# eg. a player on 97 (who needs 3 to win) rolls 5 will bounce back to 98 (100-2)
-
-# NOTES
-# Max length allowed for any snake or a ladder within the board boundaries is 99
 
 # TODO: Decide to type hint all the way or not. Comment accordingly
 
@@ -45,7 +37,9 @@ class GameObject:
         self.termination_point = termination_point
         self.distance = abs(self.activation_point - self.termination_point)
 
-    def _validate_gameobject(self, activation_point, termination_point):
+    def _validate_gameobject(
+        self, activation_point, termination_point
+    ):  # TODO: Check if leading _ (undserscore) is a good convention
         if (
             activation_point < Const.BOARD_POSITION_MIN
             or activation_point > Const.BOARD_POSITION_MAX
@@ -74,8 +68,9 @@ class Snake(GameObject):
         super().__init__(activation_point=mouth, termination_point=tail)
         if mouth < tail:
             raise EXCEPTION_OBJECT_INVERSE
-        # self.luck_range_top = self.activation_point+2 if self.activation_point+2<=100 else 100
-        # self.luck_range_end = self.activation_point-2 if self.activation_point-2>=1 else 1
+        if mouth == Const.BOARD_POSITION_MAX:
+            raise EXCEPTION_SNAKE_AT_WINNING_POSITION
+        self.mouth = mouth
 
 
 class Ladder(GameObject):
@@ -96,6 +91,7 @@ class Game:
     ERROR_MESSAGE_ACTIVATION_CLASH = (
         "Some activation point sharing termination point with other objects"
     )
+    ERROR_MESSAGE_UNSUPPORTED_GAME_OBJECT = "Unsupported game object"
 
     class Stats:
         def __init__(self):
@@ -117,6 +113,7 @@ class Game:
         self.ladders = []
         self.activation_points_map: Dict[int:Player] = dict()
         self.termination_points = []
+        self.lucky_positions = set()
         self.curr_player_ndx = 0
         self.stats = self.Stats()
 
@@ -145,6 +142,7 @@ class Game:
 
         # Ensure that the snakes and the ladders to be placed on the board,
         # do not have start and end on the same position
+        # TODO: Avoid re-iterating over gameobjects
         termination_points = [
             game_object.termination_point for game_object in game_objects
         ] + self.termination_points
@@ -154,21 +152,41 @@ class Game:
         if len(overlaps):
             return (False, self.ERROR_MESSAGE_ACTIVATION_CLASH)
 
-        # Update internal records of activation and termination points
+        # Update internal records of activation, termination and lucky positions
         new_activation_points = {
             game_object.activation_point: game_object for game_object in game_objects
         }
         self.activation_points_map.update(new_activation_points)
         self.termination_points = termination_points
 
+        # record lucky positions 1 or 2 positions aways from snakes
+        # TODO: Exclude positions that has another snake on it
+        # TODO: Avoid re-iterating over gameobjects
+        for game_object in game_objects:
+            if isinstance(game_object, Snake):
+                if game_object.mouth + 1 <= Const.BOARD_POSITION_MAX:
+                    self.lucky_positions.add(game_object.mouth + 1)
+                    if game_object.mouth + 2 <= Const.BOARD_POSITION_MAX:
+                        self.lucky_positions.add(game_object.mouth + 2)
+                if game_object.mouth - 1 >= Const.BOARD_POSITION_MIN:
+                    self.lucky_positions.add(game_object.mouth - 1)
+                    if game_object.mouth - 2 >= Const.BOARD_POSITION_MIN:
+                        self.lucky_positions.add(game_object.mouth - 2)
+        print(f"{self.lucky_positions=}")
+
         # Finally add all objects to the board
         for game_object in game_objects:
             if isinstance(game_object, Snake):
                 print("Adding snake")
                 self.snakes.append(game_object)
-            if isinstance(game_object, Ladder):
+            elif isinstance(game_object, Ladder):
                 print("Adding ladder")
                 self.ladders.append(game_object)
+            else:
+                return (
+                    False,
+                    self.ERROR_MESSAGE_UNSUPPORTED_GAME_OBJECT,
+                )  # TODO: Test this
 
         return True, ""
 
@@ -229,15 +247,37 @@ class Game:
                 return player
         return None
 
-    def move_player(self, player, die_roll) -> int:  # TODO: test
+    def move_player(self, player: Player, die_roll: int) -> int:  # TODO: test this
+        # First handle the case if the player is near the end of the board
         if player.curr_position + die_roll > Const.BOARD_POSITION_MAX:
             # bounce back
             die_roll = Const.BOARD_POSITION_MAX - (player.curr_position + die_roll)
             print(f"{player.name} bouncing back by {die_roll}")
+
+        if (
+            player.curr_position <= Const.BOARD_LAST_LUCKY_ZONE_BEGIN
+            and player.curr_position + die_roll == Const.BOARD_POSITION_MAX
+        ):
+            print(
+                f"{player.name} rolled a last lucky roll {die_roll} while at {player.curr_position}"
+            )
+            player.number_of_lucky_rolls += 1
+        elif player.curr_position + die_roll == Const.BOARD_POSITION_MAX:
+            print(
+                f"{player.name} rolled the last roll {die_roll} while at {player.curr_position}"
+            )
+
         player.curr_position += die_roll
-        # print(f"{player.name} is at {player.curr_position} after {die_roll} moves")
+
+        # See if we missed a snake by 1 or 2 positions
+        if player.curr_position in self.lucky_positions:
+            print(
+                f"{player.name} avoided a snake by landing on a lucky position: {player.curr_position}"
+            )
+            player.number_of_lucky_rolls += 1
+
         if player.curr_position in self.activation_points_map:
-            print(f"{player.name} is at {player.curr_position} after {die_roll} moves")
+            print(f"{player.name} is at {player.curr_position} ({die_roll=})")
             game_object: GameObject = self.activation_points_map[player.curr_position]
             player.curr_position = game_object.termination_point
             if isinstance(game_object, Snake):
