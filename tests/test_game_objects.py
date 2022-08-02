@@ -1,33 +1,74 @@
 import pytest
+from constants import Constants as Const
+from game_exceptions import (
+    EXCEPTION_OBJECT_INVALID_POSITION,
+    EXCEPTION_OBJECT_SHORT,
+    EXCEPTION_OBJECT_LONG,
+    EXCEPTION_OBJECT_INVERSE,
+)
 from snake_ladder_simulation import GameObject, Snake, Ladder, Game
 
 
-class Test_add_game_objects:
+class Test_game_objects:
     @pytest.fixture
     def game(self):
         return Game()
 
-    def test_valid_gameobject_longest(self):
+    def test_gameobject_spans_board(self):
+        with pytest.raises(Exception) as excinfo:
+            _ = GameObject(
+                activation_point=Const.BOARD_POSITION_MIN,
+                termination_point=Const.BOARD_POSITION_MAX,
+            )
+        assert excinfo.type == EXCEPTION_OBJECT_LONG
+
+    @pytest.mark.parametrize(
+        "valid_length",
+        [
+            {"activation_point": 1, "termination_point": 99},  # Longest valid
+            {"activation_point": 2, "termination_point": 100},  # Another longest valid
+            {
+                "activation_point": 60,
+                "termination_point": 61,
+            },  # Shortest valid that spans one row
+            {
+                "activation_point": 51,
+                "termination_point": 61,
+            },  # A long valid that spans exactly one row
+        ],
+    )
+    def test_gameobject_valid_length(self, valid_length):
         try:
-            GameObject(activation_point=51, termination_point=61)
+            _ = GameObject(**valid_length)
         except Exception as exception:
             assert False, f"GameObject instantiation failed: {exception}"
 
-    def test_valid_gameobject_shortest(self):
-        try:
-            GameObject(activation_point=60, termination_point=61)
-        except Exception as exception:
-            assert False, f"GameObject instantiation failed: {exception}"
-
-    def test_invalid_gameobject_longest(self):
+    @pytest.mark.parametrize(
+        "invalid_short_length",
+        [
+            {"activation_point": 59, "termination_point": 60},  # Shortest invalid
+            {
+                "activation_point": 51,
+                "termination_point": 60,
+            },  # Longes invalid that fits a role
+        ],
+    )
+    def test_gameobject_invalid_length(self, invalid_short_length):
         with pytest.raises(Exception) as excinfo:
-            GameObject(activation_point=51, termination_point=59)
-        assert GameObject.EXCEPTION_SHORT_OBJECT in str(excinfo.value)
+            _ = GameObject(**invalid_short_length)
+        assert excinfo.type == EXCEPTION_OBJECT_SHORT
 
-    def test_invalid_gameobject_shortest(self):
+    @pytest.mark.parametrize(
+        "invalid_position",
+        [
+            {"activation_point": -1, "termination_point": 50},
+            {"activation_point": 50, "termination_point": 101},
+        ],
+    )
+    def test_gameobject_invalid_position(self, invalid_position):
         with pytest.raises(Exception) as excinfo:
-            GameObject(activation_point=59, termination_point=60)
-        assert GameObject.EXCEPTION_SHORT_OBJECT in str(excinfo.value)
+            _ = GameObject(**invalid_position)
+        assert excinfo.type == EXCEPTION_OBJECT_INVALID_POSITION
 
     def test_valid_snake(self):
         snake = Snake(mouth=50, tail=30)
@@ -41,13 +82,13 @@ class Test_add_game_objects:
 
     def test_invalid_snake_inverse(self):
         with pytest.raises(Exception) as excinfo:
-            snake = Snake(mouth=30, tail=50)
-        assert Snake.EXCEPTION_INVERSE_OBJECT in str(excinfo.value)
+            _ = Snake(mouth=30, tail=50)
+        assert excinfo.type == EXCEPTION_OBJECT_INVERSE
 
     def test_invalid_ladder_inverse(self):
         with pytest.raises(Exception) as excinfo:
-            ladder = Ladder(bottom=50, top=30)
-        assert Ladder.EXCEPTION_INVERSE_OBJECT in str(excinfo.value)
+            _ = Ladder(bottom=50, top=30)
+        assert excinfo.type == EXCEPTION_OBJECT_INVERSE
 
     def test_add_game_objects(self, game):
         isSuccess, _ = game.add_game_objects(

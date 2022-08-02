@@ -1,5 +1,11 @@
 from typing import Union, List, Tuple, Dict
 from constants import Constants as Const
+from game_exceptions import (
+    EXCEPTION_OBJECT_INVALID_POSITION,
+    EXCEPTION_OBJECT_LONG,
+    EXCEPTION_OBJECT_SHORT,
+    EXCEPTION_OBJECT_INVERSE,
+)
 from random import randint
 import pprint
 
@@ -8,6 +14,9 @@ import pprint
 # Bounce back:
 # If a player rolls more than the last n required to win, will bounce back
 # eg. a player on 97 (who needs 3 to win) rolls 5 will bounce back to 98 (100-2)
+
+# NOTES
+# Max length allowed for any snake or a ladder within the board boundaries is 99
 
 # TODO: Decide to type hint all the way or not. Comment accordingly
 
@@ -30,28 +39,31 @@ class Player:
 
 
 class GameObject:
-    EXCEPTION_INVALID_POSITION = "Invalid position"
-    EXCEPTION_SHORT_OBJECT = "Length of the object must span at least one row"
-    EXCEPTION_INVERSE_OBJECT = "Object is inverse"
-
     def __init__(self, activation_point, termination_point):
-        if (
-            activation_point < Const.BOARD_POSITION_MIN
-            or activation_point > Const.BOARD_POSITION_MAX
-        ):
-            raise Exception(self.EXCEPTION_INVALID_POSITION)
-        if (
-            termination_point < Const.BOARD_POSITION_MIN
-            or termination_point > Const.BOARD_POSITION_MAX
-        ):
-            raise Exception(self.EXCEPTION_INVALID_POSITION)
-        if int((activation_point - 1) / Const.BOARD_ROW_SIZE) == int(
-            (termination_point - 1) / Const.BOARD_ROW_SIZE
-        ):
-            raise Exception(self.EXCEPTION_SHORT_OBJECT)
+        self._validate_gameobject(activation_point, termination_point)
         self.activation_point = activation_point
         self.termination_point = termination_point
         self.distance = abs(self.activation_point - self.termination_point)
+
+    def _validate_gameobject(self, activation_point, termination_point):
+        if (
+            activation_point < Const.BOARD_POSITION_MIN
+            or activation_point > Const.BOARD_POSITION_MAX
+            or termination_point < Const.BOARD_POSITION_MIN
+            or termination_point > Const.BOARD_POSITION_MAX
+        ):
+            raise EXCEPTION_OBJECT_INVALID_POSITION
+
+        if int((activation_point - 1) / Const.BOARD_ROW_SIZE) == int(
+            (termination_point - 1) / Const.BOARD_ROW_SIZE
+        ):
+            raise EXCEPTION_OBJECT_SHORT
+
+        if (
+            activation_point == Const.BOARD_POSITION_MIN
+            and termination_point == Const.BOARD_POSITION_MAX
+        ):
+            raise EXCEPTION_OBJECT_LONG
 
     def __str__(self):
         return pprint.pformat(self.__dict__.copy())
@@ -61,7 +73,7 @@ class Snake(GameObject):
     def __init__(self, mouth, tail):
         super().__init__(activation_point=mouth, termination_point=tail)
         if mouth < tail:
-            raise Exception(self.EXCEPTION_INVERSE_OBJECT)
+            raise EXCEPTION_OBJECT_INVERSE
         # self.luck_range_top = self.activation_point+2 if self.activation_point+2<=100 else 100
         # self.luck_range_end = self.activation_point-2 if self.activation_point-2>=1 else 1
 
@@ -70,7 +82,7 @@ class Ladder(GameObject):
     def __init__(self, top, bottom):
         super().__init__(activation_point=bottom, termination_point=top)
         if top < bottom:
-            raise Exception(self.EXCEPTION_INVERSE_OBJECT)
+            raise EXCEPTION_OBJECT_INVERSE
 
 
 class Game:
