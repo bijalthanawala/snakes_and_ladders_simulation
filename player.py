@@ -9,7 +9,7 @@ class Player:
         self.init_player_stats()
 
     def init_player_stats(self):
-        self.curr_position: int = Const.PLAYER_START_POSITION
+        self.token_position: int = Const.PLAYER_START_POSITION
         self.number_of_rolls: int = 0
         self.number_of_lucky_rolls: int = 0
         self.number_of_unlucky_rolls: int = 0

@@ -51,9 +51,21 @@ class Snake(Artefact):
             raise EXCEPTION_SNAKE_AT_WINNING_POSITION
         self.mouth = mouth
 
+    def __repr__(self):
+        return f"Snake: head={self.mouth} tail={self.termination_point}, length={self.distance}"
+
+    def __str__(self):
+        return self.__repr__()
+
 
 class Ladder(Artefact):
     def __init__(self, top, bottom):
         super().__init__(activation_point=bottom, termination_point=top)
         if top < bottom:
             raise EXCEPTION_ARTEFACT_INVERSE
+
+    def __repr__(self):
+        return f"Ladder: top={self.termination_point} bottom={self.activation_point}, length={self.distance}"
+
+    def __str__(self):
+        return self.__repr__()

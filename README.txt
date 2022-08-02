@@ -10,7 +10,6 @@ NOTES
     or two positions away from a snake's mouth than two lucky moves are counted
 
 SPECIAL CASES
-
 Bounce back:
     If a player rolls more than the last n required to win, will bounce back
     eg. a player on 97 (who needs 3 to win) rolls 5 will bounce back to 98 (100-2)

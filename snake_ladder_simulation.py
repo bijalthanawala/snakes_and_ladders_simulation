@@ -1,10 +1,10 @@
 from typing import Union, List, Tuple, Dict, Set
-from random import randint
 import pprint
 
 from constants import Constants as Const
 from player import Player
 from artefact import Artefact, Snake, Ladder
+from die import Die
 
 
 class Game:
@@ -34,15 +34,16 @@ class Game:
         def __str__(self):
             return pprint.pformat(self.__dict__.copy())
 
-    def __init__(self):
+    def __init__(self, die: Die):
         self.players: List[Player] = []
         self.snakes: List[Snake] = []
         self.ladders: List[Ladder] = []
-        self.activation_points_map: Dict[int:Player] = dict()
+        self.die: Die = die
+        self.activation_points_map: Dict[int, Artefact] = dict()
         self.termination_points: List[int] = []
-        self.lucky_positions: Set(int) = set()
+        self.lucky_positions: Set[int] = set()
         self.curr_player_ndx: int = 0
-        self.stats: self.Stat = self.Stats()
+        self.stats: "Game.Stats" = self.Stats()
 
     def reset_game_state(self) -> None:
         self.curr_player_ndx = 0
@@ -135,8 +136,8 @@ class Game:
 
             curr_player: Player = self.players[self.curr_player_ndx]
 
-            die_roll = self.roll_die()
-            self.move_player(curr_player, die_roll)
+            die_roll = self.die.roll()
+            self.move_token(curr_player, die_roll)
 
             curr_player.number_of_rolls += 1
             curr_streak.append(die_roll)
@@ -172,91 +173,179 @@ class Game:
                 player.max_distance_climbed, self.stats.game_biggest_climb
             )
 
-    def roll_die(self) -> int:
-        return randint(Const.DIE_ROLL_MIN, Const.DIE_ROLL_MAX)
-
     def spot_winner(self) -> Union[Player, None]:  # TODO: test
         player: Player
         for player in self.players:
-            if player.curr_position == Const.BOARD_POSITION_MAX:
+            if player.token_position == Const.BOARD_POSITION_MAX:
                 return player
         return None
 
-    def move_player(self, player: Player, die_roll: int) -> int:  # TODO: test this
+    def move_token(self, player: Player, die_roll: int) -> int:  # TODO: test this
         # First handle the case if the player is near the end of the board
-        if player.curr_position + die_roll > Const.BOARD_POSITION_MAX:
+        if player.token_position + die_roll > Const.BOARD_POSITION_MAX:
             # bounce back
-            die_roll = Const.BOARD_POSITION_MAX - (player.curr_position + die_roll)
+            die_roll = Const.BOARD_POSITION_MAX - (player.token_position + die_roll)
             print(f"{player.name} bouncing back by {die_roll}")
 
         if (
-            player.curr_position <= Const.BOARD_LAST_LUCKY_ZONE_BEGIN
-            and player.curr_position + die_roll == Const.BOARD_POSITION_MAX
+            player.token_position <= Const.BOARD_LAST_LUCKY_ZONE_BEGIN
+            and player.token_position + die_roll == Const.BOARD_POSITION_MAX
         ):
             print(
-                f"{player.name} rolled a last lucky roll {die_roll} while at {player.curr_position}"
+                f"{player.name} rolled a last lucky roll {die_roll} while at {player.token_position}"
             )
             player.number_of_lucky_rolls += 1
-        elif player.curr_position + die_roll == Const.BOARD_POSITION_MAX:
+        elif player.token_position + die_roll == Const.BOARD_POSITION_MAX:
             print(
-                f"{player.name} rolled the last roll {die_roll} while at {player.curr_position}"
+                f"{player.name} rolled the last roll {die_roll} while at {player.token_position}"
             )
 
-        player.curr_position += die_roll
+        player.token_position += die_roll
 
         # See if we missed a snake by 1 or 2 positions
-        if player.curr_position in self.lucky_positions:
+        if player.token_position in self.lucky_positions:
             print(
-                f"{player.name} avoided a snake by landing on a lucky position: {player.curr_position}"
+                f"{player.name} avoided a snake by landing on a lucky position: {player.token_position}"
             )
             player.number_of_lucky_rolls += 1
 
-        if player.curr_position in self.activation_points_map:
-            print(f"{player.name} is at {player.curr_position} ({die_roll=})")
-            artefact: Artefact = self.activation_points_map[player.curr_position]
-            player.curr_position = artefact.termination_point
+        if player.token_position in self.activation_points_map:
+            print(f"{player.name} is at {player.token_position} ({die_roll=})")
+            artefact: Artefact = self.activation_points_map[player.token_position]
+            player.token_position = artefact.termination_point
             if isinstance(artefact, Snake):
                 player.number_of_unlucky_rolls += 1
                 player.total_distance_slid += artefact.distance
                 player.max_distance_slid = max(
                     artefact.distance, player.max_distance_slid
                 )
-                print(f"{player.name} moved to {player.curr_position} due to Snake")
+                print(f"{player.name} moved to {player.token_position} due to Snake")
             elif isinstance(artefact, Ladder):
                 player.number_of_lucky_rolls += 1
                 player.total_distance_climbed += artefact.distance
                 player.max_distance_climbed = max(
                     artefact.distance, player.max_distance_climbed
                 )
-                print(f"{player.name} moved to {player.curr_position} due to Ladder")
+                print(f"{player.name} moved to {player.token_position} due to Ladder")
         return die_roll
 
 
+def read_conf_file() -> Tuple[bool, int, int, List[List[int]], List[List[int]]]:
+    def str_to_int(s):
+        try:
+            return int(s)
+        except ValueError:
+            return -1
+
+    CONFIG_FILENAME = "game.conf"
+    isSuccess: bool = False
+    number_of_simulations: int = 0
+    number_of_players: int = 0
+    snakes_conf: List[List[int]] = []
+    ladders_conf: List[List[int]] = []
+    try:
+        with open(CONFIG_FILENAME) as conf_file:
+            raw_config_lines = conf_file.readlines()
+    except FileNotFoundError:
+        print(f"Please supply a config file by name {CONFIG_FILENAME}")
+        return (
+            isSuccess,
+            number_of_simulations,
+            number_of_players,
+            snakes_conf,
+            ladders_conf,
+        )
+
+    for line in raw_config_lines:
+        line = line.strip()
+        if len(line) == 0 or line[0] == "#":
+            continue
+        config = line.split("=")
+        if len(config) < 2:
+            break
+        key, value = config[0].strip().upper(), config[1].strip()
+        if key == "NUMBER_OF_SIMULATIONS":
+            number_of_simulations = str_to_int(value)
+            if number_of_simulations < 0:
+                break
+            continue
+        if key == "NUMBER_OF_PLAYERS":
+            number_of_players = str_to_int(value)
+            if number_of_players < 0:
+                break
+            continue
+        if key == "SNAKE" or key == "LADDER":
+            positions_conf = value.split(",")
+            if len(positions_conf) != 2:
+                break
+            positions = list(map(lambda x: str_to_int(x.strip()), positions_conf))
+            if positions.count(-1) != 0:
+                break
+            if key == "SNAKE":
+                snakes_conf.append(positions)
+            else:
+                ladders_conf.append(positions)
+    else:  # For-else
+        isSuccess = True
+
+    if not isSuccess:
+        print(f"Invalid line: {line}")
+
+    return (
+        isSuccess,
+        number_of_simulations,
+        number_of_players,
+        snakes_conf,
+        ladders_conf,
+    )
+
+
 def main():
+    players: List[Player] = []
+    snakes: List[Snake] = []
+    ladders: List[Ladder] = []
+
+    isSuccess: bool
+    number_of_simulations: int
+    number_of_players: int
+    snakes_conf: List[List[int]]
+    ladders_conf: List[List[int]]
+    print("Reading game configuration...")
+    (
+        isSuccess,
+        number_of_simulations,
+        number_of_players,
+        snakes_conf,
+        ladders_conf,
+    ) = read_conf_file()
+    if not isSuccess:
+        print("Error reading config file. Quitting")
+        return
+
+    for head, tail in snakes_conf:
+        snakes.append(Snake(mouth=head, tail=tail))
+
+    for top, bottom in ladders_conf:
+        ladders.append(Ladder(top=top, bottom=bottom))
+
+    for n in range(1, number_of_players + 1):
+        players.append(Player(f"Player_{n}"))
+
+    print("CONFIGURATION:")
+    print(f"Number of simulations: {number_of_simulations}")
+    print(f"Number of players: {number_of_players}")
+    pprint.pprint(snakes)
+    pprint.pprint(ladders)
+
     print("Game starting...")
-    game = Game()
-    game.add_players([Player("P1"), Player("P2"), Player("P3")])
-    snakes = [
-        Snake(mouth=27, tail=5),
-        Snake(mouth=15, tail=5),
-        Snake(mouth=40, tail=3),
-        Snake(mouth=43, tail=18),
-        Snake(mouth=54, tail=31),
-        Snake(mouth=66, tail=45),
-        Snake(mouth=89, tail=53),
-    ]  # TODO: Make this configurable
-    ladders = [
-        Ladder(top=25, bottom=4),
-        Ladder(top=49, bottom=33),
-        Ladder(top=63, bottom=42),
-        Ladder(top=46, bottom=13),
-        Ladder(top=69, bottom=50),
-        Ladder(top=81, bottom=62),
-        Ladder(top=92, bottom=74),
-    ]  # TODO: Make this configurable
+
+    game = Game(Die())
+    game.add_players(players)
+
     isSuccess, err_message = game.add_artefacts(snakes + ladders)
     if not isSuccess:
         print(f"Error: {err_message}")
+        print("Quitting")
         return
     winner = game.play()
     for player in game.players:

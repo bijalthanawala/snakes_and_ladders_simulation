@@ -8,13 +8,14 @@ from game_exceptions import (
     EXCEPTION_SNAKE_AT_WINNING_POSITION,
 )
 from artefact import Artefact, Snake, Ladder
+from die import Die
 from snake_ladder_simulation import Game
 
 
 class Test_artefacts:
     @pytest.fixture
     def game(self):
-        return Game()
+        return Game(Die())
 
     def test_artefact_spans_board(self):
         with pytest.raises(Exception) as excinfo:
