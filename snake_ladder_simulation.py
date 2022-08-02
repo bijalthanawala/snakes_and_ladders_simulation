@@ -30,14 +30,14 @@ class Player:
         return pprint.pformat(self.__dict__.copy())
 
 
-class GameArtefact:
+class Artefact:
     def __init__(self, activation_point, termination_point):
-        self._validate_gameartefact(activation_point, termination_point)
+        self._validate_artefact(activation_point, termination_point)
         self.activation_point = activation_point
         self.termination_point = termination_point
         self.distance = abs(self.activation_point - self.termination_point)
 
-    def _validate_gameartefact(
+    def _validate_artefact(
         self, activation_point, termination_point
     ):  # TODO: Check if leading _ (undserscore) is a good convention
         if (
@@ -63,7 +63,7 @@ class GameArtefact:
         return pprint.pformat(self.__dict__.copy())
 
 
-class Snake(GameArtefact):
+class Snake(Artefact):
     def __init__(self, mouth, tail):
         super().__init__(activation_point=mouth, termination_point=tail)
         if mouth < tail:
@@ -73,7 +73,7 @@ class Snake(GameArtefact):
         self.mouth = mouth
 
 
-class Ladder(GameArtefact):
+class Ladder(Artefact):
     def __init__(self, top, bottom):
         super().__init__(activation_point=bottom, termination_point=top)
         if top < bottom:
@@ -81,9 +81,6 @@ class Ladder(GameArtefact):
 
 
 class Game:
-    DIE_ROLL_MIN = 1
-    DIE_ROLL_MAX = 6
-    DIE_ROLL_REPEAT = DIE_ROLL_MAX
 
     ERROR_MESSAGE_ACTIVATION_DUPLICATED = (
         "Activation point duplicated with other artefacts"
@@ -91,7 +88,7 @@ class Game:
     ERROR_MESSAGE_ACTIVATION_CLASH = (
         "Some activation point sharing termination point with other artefacts"
     )
-    ERROR_MESSAGE_UNSUPPORTED_GAME_ARTEFACT = "Unsupported game artefact"
+    ERROR_MESSAGE_UNSUPPORTED_ARTEFACT = "Unsupported artefact"
 
     class Stats:
         def __init__(self):
@@ -123,17 +120,15 @@ class Game:
     def add_player(self, player: Player) -> None:
         self.players.append(player)
 
-    def add_game_artefacts(
-        self, game_artefacts: List[GameArtefact]
-    ) -> Tuple[bool, str]:
+    def add_artefacts(self, artefacts: List[Artefact]) -> Tuple[bool, str]:
 
-        for ga in game_artefacts:
+        for ga in artefacts:
             print(ga)
 
         # Ensure that the snakes and the ladders to be placed on the board,
         # do not start at the same position
         activation_points = [
-            game_artefact.activation_point for game_artefact in game_artefacts
+            artefact.activation_point for artefact in artefacts
         ] + list(self.activation_points_map.keys())
         print(f"{activation_points=}")
         if len(activation_points) != len(set(activation_points)):
@@ -141,9 +136,9 @@ class Game:
 
         # Ensure that the snakes and the ladders to be placed on the board,
         # do not have start and end on the same position
-        # TODO: Avoid re-iterating over gameartefacts
+        # TODO: Avoid re-iterating over artefacts
         termination_points = [
-            game_artefact.termination_point for game_artefact in game_artefacts
+            artefact.termination_point for artefact in artefacts
         ] + self.termination_points
         overlaps = set(activation_points) & set(termination_points)
         print(f"{termination_points=}")
@@ -153,39 +148,38 @@ class Game:
 
         # Update internal records of activation, termination and lucky positions
         new_activation_points = {
-            game_artefact.activation_point: game_artefact
-            for game_artefact in game_artefacts
+            artefact.activation_point: artefact for artefact in artefacts
         }
         self.activation_points_map.update(new_activation_points)
         self.termination_points = termination_points
 
         # record lucky positions 1 or 2 positions aways from snakes
         # TODO: Exclude positions that has another snake on it
-        # TODO: Avoid re-iterating over gameartefacts
-        for game_artefact in game_artefacts:
-            if isinstance(game_artefact, Snake):
-                if game_artefact.mouth + 1 <= Const.BOARD_POSITION_MAX:
-                    self.lucky_positions.add(game_artefact.mouth + 1)
-                    if game_artefact.mouth + 2 <= Const.BOARD_POSITION_MAX:
-                        self.lucky_positions.add(game_artefact.mouth + 2)
-                if game_artefact.mouth - 1 >= Const.BOARD_POSITION_MIN:
-                    self.lucky_positions.add(game_artefact.mouth - 1)
-                    if game_artefact.mouth - 2 >= Const.BOARD_POSITION_MIN:
-                        self.lucky_positions.add(game_artefact.mouth - 2)
+        # TODO: Avoid re-iterating over artefacts
+        for artefact in artefacts:
+            if isinstance(artefact, Snake):
+                if artefact.mouth + 1 <= Const.BOARD_POSITION_MAX:
+                    self.lucky_positions.add(artefact.mouth + 1)
+                    if artefact.mouth + 2 <= Const.BOARD_POSITION_MAX:
+                        self.lucky_positions.add(artefact.mouth + 2)
+                if artefact.mouth - 1 >= Const.BOARD_POSITION_MIN:
+                    self.lucky_positions.add(artefact.mouth - 1)
+                    if artefact.mouth - 2 >= Const.BOARD_POSITION_MIN:
+                        self.lucky_positions.add(artefact.mouth - 2)
         print(f"{self.lucky_positions=}")
 
         # Finally add all artefacts to the board
-        for game_artefact in game_artefacts:
-            if isinstance(game_artefact, Snake):
+        for artefact in artefacts:
+            if isinstance(artefact, Snake):
                 print("Adding snake")
-                self.snakes.append(game_artefact)
-            elif isinstance(game_artefact, Ladder):
+                self.snakes.append(artefact)
+            elif isinstance(artefact, Ladder):
                 print("Adding ladder")
-                self.ladders.append(game_artefact)
+                self.ladders.append(artefact)
             else:
                 return (
                     False,
-                    self.ERROR_MESSAGE_UNSUPPORTED_GAME_ARTEFACT,
+                    self.ERROR_MESSAGE_UNSUPPORTED_ARTEFACT,
                 )  # TODO: Test this
 
         return True, ""
@@ -207,7 +201,7 @@ class Game:
 
             curr_player.number_of_rolls += 1
             curr_streak.append(die_roll)
-            if die_roll != self.DIE_ROLL_REPEAT:
+            if die_roll != Const.DIE_ROLL_REPEAT:
                 # print( f"{curr_streak=} ,  {curr_player.name}'s {curr_player.max_streak=}")
                 if sum(curr_streak) > sum(
                     curr_player.max_streak
@@ -239,7 +233,7 @@ class Game:
             )
 
     def roll_die(self) -> int:
-        return randint(self.DIE_ROLL_MIN, self.DIE_ROLL_MAX)
+        return randint(Const.DIE_ROLL_MIN, Const.DIE_ROLL_MAX)
 
     def spot_winner(self) -> Union[Player, None]:  # TODO: test
         for player in self.players:
@@ -278,22 +272,20 @@ class Game:
 
         if player.curr_position in self.activation_points_map:
             print(f"{player.name} is at {player.curr_position} ({die_roll=})")
-            game_artefact: GameArtefact = self.activation_points_map[
-                player.curr_position
-            ]
-            player.curr_position = game_artefact.termination_point
-            if isinstance(game_artefact, Snake):
+            artefact: Artefact = self.activation_points_map[player.curr_position]
+            player.curr_position = artefact.termination_point
+            if isinstance(artefact, Snake):
                 player.number_of_unlucky_rolls += 1
-                player.total_distance_slid += game_artefact.distance
+                player.total_distance_slid += artefact.distance
                 player.max_distance_slid = max(
-                    game_artefact.distance, player.max_distance_slid
+                    artefact.distance, player.max_distance_slid
                 )
                 print(f"{player.name} moved to {player.curr_position} due to Snake")
-            elif isinstance(game_artefact, Ladder):
+            elif isinstance(artefact, Ladder):
                 player.number_of_lucky_rolls += 1
-                player.total_distance_climbed += game_artefact.distance
+                player.total_distance_climbed += artefact.distance
                 player.max_distance_climbed = max(
-                    game_artefact.distance, player.max_distance_climbed
+                    artefact.distance, player.max_distance_climbed
                 )
                 print(f"{player.name} moved to {player.curr_position} due to Ladder")
         return die_roll
@@ -323,7 +315,7 @@ def main():
         Ladder(top=81, bottom=62),
         Ladder(top=92, bottom=74),
     ]  # TODO: Make this configurable
-    isSuccess, err_message = game.add_game_artefacts(snakes + ladders)
+    isSuccess, err_message = game.add_artefacts(snakes + ladders)
     if not isSuccess:
         print(f"Error: {err_message}")
         return

@@ -1,7 +1,9 @@
 Snakes and ladders simulation
 
 NOTES
--   Max length allowed for any snake or a ladder within the board boundaries is 99
+-   In case of a die-roll-streak, e.g. [6,6,2], every snake and ladders encountered
+    for every single roll within that streak are honored
+-   Max length allowed for a snake within the board boundaries is 99
 -   If a snake's mouth is positioned at 98 or 99, arriving at the winnig position (100)
     from any position 97 or less is considered a 'lucky' move
 -   If a players arrives at the bottom of a ladder, and if that also happens to be one

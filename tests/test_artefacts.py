@@ -7,17 +7,17 @@ from game_exceptions import (
     EXCEPTION_ARTEFACT_INVERSE,
     EXCEPTION_SNAKE_AT_WINNING_POSITION,
 )
-from snake_ladder_simulation import GameArtefact, Snake, Ladder, Game
+from snake_ladder_simulation import Artefact, Snake, Ladder, Game
 
 
-class Test_game_artefacts:
+class Test_artefacts:
     @pytest.fixture
     def game(self):
         return Game()
 
     def test_artefact_spans_board(self):
         with pytest.raises(Exception) as excinfo:
-            _ = GameArtefact(
+            _ = Artefact(
                 activation_point=Const.BOARD_POSITION_MIN,
                 termination_point=Const.BOARD_POSITION_MAX,
             )
@@ -40,7 +40,7 @@ class Test_game_artefacts:
     )
     def test_artefact_valid_length(self, valid_length):
         try:
-            _ = GameArtefact(**valid_length)
+            _ = Artefact(**valid_length)
         except Exception as exception:
             assert False, f"Artefact instantiation failed: {exception}"
 
@@ -56,7 +56,7 @@ class Test_game_artefacts:
     )
     def test_artefact_invalid_length(self, invalid_short_length):
         with pytest.raises(Exception) as excinfo:
-            _ = GameArtefact(**invalid_short_length)
+            _ = Artefact(**invalid_short_length)
         assert excinfo.type == EXCEPTION_ARTEFACT_SHORT
 
     @pytest.mark.parametrize(
@@ -68,7 +68,7 @@ class Test_game_artefacts:
     )
     def test_artefact_invalid_position(self, invalid_position):
         with pytest.raises(Exception) as excinfo:
-            _ = GameArtefact(**invalid_position)
+            _ = Artefact(**invalid_position)
         assert excinfo.type == EXCEPTION_ARTEFACT_INVALID_POSITION
 
     def test_valid_snake(self):
@@ -96,8 +96,8 @@ class Test_game_artefacts:
             _ = Snake(mouth=Const.BOARD_POSITION_MAX, tail=50)
         assert excinfo.type == EXCEPTION_SNAKE_AT_WINNING_POSITION
 
-    def test_add_game_artefacts(self, game):
-        isSuccess, _ = game.add_game_artefacts(
+    def test_add_artefacts(self, game):
+        isSuccess, _ = game.add_artefacts(
             [
                 Snake(mouth=50, tail=30),
             ]
@@ -105,7 +105,7 @@ class Test_game_artefacts:
         assert isSuccess == True
         assert len(game.snakes) == 1
         assert len(game.ladders) == 0
-        isSuccess, _ = game.add_game_artefacts(
+        isSuccess, _ = game.add_artefacts(
             [
                 Ladder(top=40, bottom=20),
             ]
@@ -115,34 +115,34 @@ class Test_game_artefacts:
         assert len(game.ladders) == 1
 
     @pytest.mark.parametrize(
-        "game_artefacts_with_same_activation_points",
+        "artefacts_with_same_activation_points",
         [
             [Snake(mouth=50, tail=30), Snake(mouth=50, tail=20)],
             [Ladder(top=50, bottom=30), Ladder(top=70, bottom=30)],
             [Snake(mouth=50, tail=30), Ladder(top=60, bottom=50)],
         ],
     )
-    def test_add_game_artefacts_with_same_initiation_points(
-        self, game: Game, game_artefacts_with_same_activation_points
+    def test_add_artefacts_with_same_initiation_points(
+        self, game: Game, artefacts_with_same_activation_points
     ):
-        isSuccess, error_message = game.add_game_artefacts(
-            game_artefacts_with_same_activation_points
+        isSuccess, error_message = game.add_artefacts(
+            artefacts_with_same_activation_points
         )
         assert isSuccess == False
         assert error_message == game.ERROR_MESSAGE_ACTIVATION_DUPLICATED
 
     @pytest.mark.parametrize(
-        "game_artefacts_with_same_initiation_and_termination_points",
+        "artefacts_with_same_initiation_and_termination_points",
         [
             [Snake(mouth=50, tail=30), Ladder(top=60, bottom=30)],
             [Snake(mouth=50, tail=30), Ladder(top=50, bottom=10)],
         ],
     )
-    def test_add_game_artefacts_snake_and_ladder_with_same_initiation_and_termination_points(
-        self, game: Game, game_artefacts_with_same_initiation_and_termination_points
+    def test_add_artefacts_snake_and_ladder_with_same_initiation_and_termination_points(
+        self, game: Game, artefacts_with_same_initiation_and_termination_points
     ):
-        isSuccess, error_message = game.add_game_artefacts(
-            game_artefacts_with_same_initiation_and_termination_points
+        isSuccess, error_message = game.add_artefacts(
+            artefacts_with_same_initiation_and_termination_points
         )
         assert isSuccess == False
         assert error_message == game.ERROR_MESSAGE_ACTIVATION_CLASH
