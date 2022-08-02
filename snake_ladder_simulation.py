@@ -1,86 +1,10 @@
 from typing import Union, List, Tuple, Dict, Set
-from constants import Constants as Const
-from game_exceptions import (
-    EXCEPTION_ARTEFACT_INVALID_POSITION,
-    EXCEPTION_ARTEFACT_LONG,
-    EXCEPTION_ARTEFACT_SHORT,
-    EXCEPTION_ARTEFACT_INVERSE,
-    EXCEPTION_SNAKE_AT_WINNING_POSITION,
-)
 from random import randint
 import pprint
 
-# TODO: Decide to type hint all the way or not. Comment accordingly
-
-
-class Player:
-    def __init__(self, name: str):
-        self.name: str = name
-        self.init_player_stats()
-
-    def init_player_stats(self):
-        self.curr_position: int = Const.PLAYER_START_POSITION
-        self.number_of_rolls: int = 0
-        self.number_of_lucky_rolls: int = 0
-        self.number_of_unlucky_rolls: int = 0
-        self.max_distance_slid: int = 0
-        self.max_distance_climbed: int = 0
-        self.total_distance_slid: int = 0
-        self.total_distance_climbed: int = 0
-        self.max_streak: List[int] = []
-
-    def __str__(self):
-        return pprint.pformat(self.__dict__.copy())
-
-
-class Artefact:
-    def __init__(self, activation_point, termination_point):
-        self._validate_artefact(activation_point, termination_point)
-        self.activation_point = activation_point
-        self.termination_point = termination_point
-        self.distance = abs(self.activation_point - self.termination_point)
-
-    def _validate_artefact(
-        self, activation_point, termination_point
-    ):  # TODO: Check if leading _ (undserscore) is a good convention
-        if (
-            activation_point < Const.BOARD_POSITION_MIN
-            or activation_point > Const.BOARD_POSITION_MAX
-            or termination_point < Const.BOARD_POSITION_MIN
-            or termination_point > Const.BOARD_POSITION_MAX
-        ):
-            raise EXCEPTION_ARTEFACT_INVALID_POSITION
-
-        if int((activation_point - 1) / Const.BOARD_ROW_SIZE) == int(
-            (termination_point - 1) / Const.BOARD_ROW_SIZE
-        ):
-            raise EXCEPTION_ARTEFACT_SHORT
-
-        if (
-            activation_point == Const.BOARD_POSITION_MIN
-            and termination_point == Const.BOARD_POSITION_MAX
-        ):
-            raise EXCEPTION_ARTEFACT_LONG
-
-    def __str__(self):
-        return pprint.pformat(self.__dict__.copy())
-
-
-class Snake(Artefact):
-    def __init__(self, mouth, tail):
-        super().__init__(activation_point=mouth, termination_point=tail)
-        if mouth < tail:
-            raise EXCEPTION_ARTEFACT_INVERSE
-        if mouth == Const.BOARD_POSITION_MAX:
-            raise EXCEPTION_SNAKE_AT_WINNING_POSITION
-        self.mouth = mouth
-
-
-class Ladder(Artefact):
-    def __init__(self, top, bottom):
-        super().__init__(activation_point=bottom, termination_point=top)
-        if top < bottom:
-            raise EXCEPTION_ARTEFACT_INVERSE
+from constants import Constants as Const
+from player import Player
+from artefact import Artefact, Snake, Ladder
 
 
 class Game:
@@ -128,8 +52,10 @@ class Game:
         for player in self.players:
             player.init_player_stats()
 
-    def add_player(self, player: Player) -> None:
-        self.players.append(player)
+    def add_players(self, players: List[Player]) -> None:
+        player: Player
+        for player in players:
+            self.players.append(player)
 
     def add_artefacts(self, artefacts: List[Artefact]) -> Tuple[bool, str]:
         artefact: Artefact  # Used in for loops
@@ -309,9 +235,7 @@ class Game:
 def main():
     print("Game starting...")
     game = Game()
-    game.add_player(Player("P1"))
-    game.add_player(Player("P2"))
-    game.add_player(Player("P3"))
+    game.add_players([Player("P1"), Player("P2"), Player("P3")])
     snakes = [
         Snake(mouth=27, tail=5),
         Snake(mouth=15, tail=5),

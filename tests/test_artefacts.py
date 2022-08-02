@@ -7,7 +7,8 @@ from game_exceptions import (
     EXCEPTION_ARTEFACT_INVERSE,
     EXCEPTION_SNAKE_AT_WINNING_POSITION,
 )
-from snake_ladder_simulation import Artefact, Snake, Ladder, Game
+from artefact import Artefact, Snake, Ladder
+from snake_ladder_simulation import Game
 
 
 class Test_artefacts:
