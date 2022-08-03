@@ -32,15 +32,17 @@ python3 snake_ladder_simulation.py
 
 
 TESTED:
-The simulator so far tested on, and known to work on
+The simulator has been so far tested on, and known to work on
     - Apple MacOS
     - Fedora Linux
 
 
 NOTES:
-* Restriction on the lengths of snake and ladder:
-    - A snake or a ladders spanning the entire board is rejected by the simulator
-* Lucky move counted twice in single move in these cases:
+* Among others, some of the restrictions on the configuration of the snakes and the ladders include:
+    - A snake or a ladder spanning the entire board is not allowed
+    - Placing a snake on the winning position (100) is not allowed
+    In the current implementation, simulator notifies and halts upon detecting the above conditions
+* Lucky move is counted twice in a single move in the following cases:
     -   If a snake's head is positioned at 98 or 99, arriving at the winnig position (100)
         from any position 97 or less is counted 'lucky' twice
     -   If a players arrives at the bottom of a ladder, and if that also happens to be one
