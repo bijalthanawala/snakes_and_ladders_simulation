@@ -260,8 +260,10 @@ def read_conf_file() -> Tuple[bool, int, int, List[List[int]], List[List[int]]]:
         )
 
     for line in raw_config_lines:
-        line = line.strip()
-        if len(line) == 0 or line[0] == "#":
+        line = line.strip().split("#")[
+            0
+        ]  # Handles full-line comments and also comments after the key-value pair
+        if not line:
             continue
         config = line.split("=")
         if len(config) < 2:
