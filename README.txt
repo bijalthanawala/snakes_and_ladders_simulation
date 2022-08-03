@@ -47,6 +47,8 @@ NOTES:
 * Among others, some of the restrictions on the configuration of the snakes and the ladders include:
     - A snake or a ladder spanning the entire board is not allowed
     - Placing a snake on the winning position (100) is not allowed
+    - A snake or a ladder not spanning a row (i.e. horizontal) are not allowed
+     (This restriction is only to maintain aesthatics of the game board)
     In the current implementation, simulator notifies and halts upon detecting the above conditions
 * Lucky move is counted twice in a single move in the following cases:
     -   If a snake's head is positioned at 98 or 99, arriving at the winnig position (100)
