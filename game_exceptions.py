@@ -1,3 +1,14 @@
+ERROR_MESSAGE_ACTIVATION_DUPLICATED = (
+    "Can not add a snake/ladder that shares head/bottom with another snake/ladder"
+)
+ERROR_MESSAGE_ACTIVATION_CLASH = (
+    "Can not add a snake/ladder that starts where another ends"
+)
+ERROR_MESSAGE_UNSUPPORTED_ARTEFACT = (
+    "Neither snake, nor ladder! Unsupported game object"
+)
+
+
 class EXCEPTION_ARTEFACT_INVALID_POSITION(Exception):
     message = "{artefact_type} extends outside the range of the board"
 

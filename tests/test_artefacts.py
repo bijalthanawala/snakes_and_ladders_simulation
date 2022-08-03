@@ -6,7 +6,10 @@ from game_exceptions import (
     EXCEPTION_ARTEFACT_LONG,
     EXCEPTION_ARTEFACT_INVERSE,
     EXCEPTION_SNAKE_AT_WINNING_POSITION,
+    ERROR_MESSAGE_ACTIVATION_CLASH,
+    ERROR_MESSAGE_ACTIVATION_DUPLICATED,
 )
+
 from artefact import Artefact, Snake, Ladder
 from die import Die
 from snake_ladder_simulation import Game
@@ -131,7 +134,7 @@ class Test_artefacts:
             artefacts_with_same_activation_points
         )
         assert isSuccess == False
-        assert error_message == game.ERROR_MESSAGE_ACTIVATION_DUPLICATED
+        assert error_message == ERROR_MESSAGE_ACTIVATION_DUPLICATED
 
     @pytest.mark.parametrize(
         "artefacts_with_same_initiation_and_termination_points",
@@ -147,4 +150,4 @@ class Test_artefacts:
             artefacts_with_same_initiation_and_termination_points
         )
         assert isSuccess == False
-        assert error_message == game.ERROR_MESSAGE_ACTIVATION_CLASH
+        assert error_message == ERROR_MESSAGE_ACTIVATION_CLASH

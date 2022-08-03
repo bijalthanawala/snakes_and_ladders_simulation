@@ -7,21 +7,15 @@ from player import Player
 from artefact import Artefact, Snake, Ladder
 from die import Die
 from game_stats import GameStats
-from game_exceptions import get_user_friendly_error_message
+from game_exceptions import (
+    get_user_friendly_error_message,
+    ERROR_MESSAGE_ACTIVATION_CLASH,
+    ERROR_MESSAGE_ACTIVATION_DUPLICATED,
+    ERROR_MESSAGE_UNSUPPORTED_ARTEFACT,
+)
 
 
 class Game:
-
-    ERROR_MESSAGE_ACTIVATION_DUPLICATED = (
-        "Can not add a snake/ladder that shares head/bottom with another snake/ladder"
-    )
-    ERROR_MESSAGE_ACTIVATION_CLASH = (
-        "Can not add a snake/ladder that starts where another ends"
-    )
-    ERROR_MESSAGE_UNSUPPORTED_ARTEFACT = (
-        "Neither snake, nor ladder! Unsupported game object"
-    )
-
     def __init__(self, die: Die, number_of_simulations: int):
         self.number_of_simulations = number_of_simulations
         self.players: List[Player] = []
@@ -53,19 +47,19 @@ class Game:
         activation_points = [
             artefact.activation_point for artefact in artefacts
         ] + list(self.activation_points_map.keys())
-        print(f"{activation_points=}")
+        # print(f"{activation_points=}")
         if len(activation_points) != len(set(activation_points)):
-            return False, self.ERROR_MESSAGE_ACTIVATION_DUPLICATED
+            return False, ERROR_MESSAGE_ACTIVATION_DUPLICATED
 
         # Ensure: Snakes and the ladders to be placed on the board, do not have start and end on the same position
         all_termination_points = [
             artefact.termination_point for artefact in artefacts
         ] + list(self.termination_points)
         overlaps = set(activation_points) & set(all_termination_points)
-        print(f"{all_termination_points=}")
-        print(f"{overlaps=}")
+        # print(f"{all_termination_points=}")
+        # print(f"{overlaps=}")
         if len(overlaps):
-            return (False, self.ERROR_MESSAGE_ACTIVATION_CLASH)
+            return (False, ERROR_MESSAGE_ACTIVATION_CLASH)
 
         # Update internal records of activation, termination and lucky positions
         new_activation_points = {
@@ -73,11 +67,10 @@ class Game:
         }
         self.activation_points_map.update(new_activation_points)
         self.termination_points = set(all_termination_points)
-        print(f"{self.termination_points=}")
+        # print(f"{self.termination_points=}")
 
         # record lucky positions 1 or 2 positions aways from snakes
-        # TODO: Exclude positions that has another snake on it
-        # TODO: Avoid re-iterating over artefacts
+        # TODO:  Exclude positions with snake's head from this lucky positions list
         for artefact in artefacts:
             if isinstance(artefact, Snake):
                 if artefact.head + 1 <= Const.BOARD_POSITION_MAX:
@@ -88,7 +81,7 @@ class Game:
                     self.lucky_positions.add(artefact.head - 1)
                     if artefact.head - 2 >= Const.BOARD_POSITION_MIN:
                         self.lucky_positions.add(artefact.head - 2)
-        print(f"{self.lucky_positions=}")
+        # print(f"{self.lucky_positions=}")
 
         # Finally add all the artefacts to the board
         for artefact in artefacts:
@@ -99,8 +92,8 @@ class Game:
             else:
                 return (
                     False,
-                    self.ERROR_MESSAGE_UNSUPPORTED_ARTEFACT,
-                )  # TODO: Test this
+                    ERROR_MESSAGE_UNSUPPORTED_ARTEFACT,
+                )  # TODO: Write test for this
 
         return True, ""
 
@@ -139,6 +132,7 @@ class Game:
         return winner
 
     def record_game_stat(self, winner: Player, simulation_number_offset):
+        # TODO: Write test for game_stat calculations
         game_stat = self.game_stats[simulation_number_offset]
         game_stat.game_number_of_rolls_to_win = winner.number_of_rolls
         player: Player
@@ -149,50 +143,51 @@ class Game:
             game_stat.game_total_unlucky_rolls += player.number_of_unlucky_rolls
             game_stat.game_total_distance_slid += player.total_distance_slid
             game_stat.game_total_distance_climbed += player.total_distance_climbed
-            game_stat.game_biggest_slid = max(
-                player.max_distance_slid, game_stat.game_biggest_slid
+            game_stat.game_max_distance_slide = max(
+                player.max_distance_slid, game_stat.game_max_distance_slide
             )
-            game_stat.game_biggest_climb = max(
-                player.max_distance_climbed, game_stat.game_biggest_climb
+            game_stat.game_max_distance_climbed = max(
+                player.max_distance_climbed, game_stat.game_max_distance_climbed
             )
 
-    def spot_winner(self) -> Union[Player, None]:  # TODO: test
+    def spot_winner(self) -> Union[Player, None]:  # TODO: Write test for this
         player: Player
         for player in self.players:
             if player.token_position == Const.BOARD_POSITION_MAX:
                 return player
         return None
 
-    def move_token(self, player: Player, die_roll: int) -> int:  # TODO: test this
+    def move_token(self, player: Player, die_roll: int) -> int:
+        """
+        This method moves the token on the board and also maintains
+        player's own state and stats
+        """
         if player.token_position + die_roll > Const.BOARD_POSITION_MAX:
             # Bounce back if we are overshooting the board
             die_roll = Const.BOARD_POSITION_MAX - (player.token_position + die_roll)
-            print(f"{player.name} bouncing back by {die_roll}")
+            # print(f"{player.name} bouncing back by {die_roll}")
 
+        # Check if this the last lucky roll from the lucky zone
         if (
             player.token_position <= Const.BOARD_LAST_LUCKY_ZONE_BEGIN
             and player.token_position + die_roll == Const.BOARD_POSITION_MAX
         ):
-            print(
-                f"{player.name} rolled a last lucky roll {die_roll} while at {player.token_position}"
-            )
+            # print(
+            #    f"{player.name} rolled a last lucky roll {die_roll} while at {player.token_position}"
+            # )
             player.number_of_lucky_rolls += 1
-        elif player.token_position + die_roll == Const.BOARD_POSITION_MAX:
-            print(
-                f"{player.name} rolled the last roll {die_roll} while at {player.token_position}"
-            )
 
         player.token_position += die_roll
 
-        # See if we missed a snake by 1 or 2 positions
+        # Check if the player missed a snake by 1 or 2 positions
         if player.token_position in self.lucky_positions:
-            print(
-                f"{player.name} avoided a snake by landing on a lucky position: {player.token_position}"
-            )
+            # print(
+            #    f"{player.name} avoided a snake by landing on a lucky position: {player.token_position}"
+            # )
             player.number_of_lucky_rolls += 1
 
+        # Act if we have arrived at the head of snake, or start of a ladder
         if player.token_position in self.activation_points_map:
-            print(f"{player.name} is at {player.token_position} ({die_roll=})")
             artefact: Artefact = self.activation_points_map[player.token_position]
             player.token_position = artefact.termination_point
             if isinstance(artefact, Snake):
@@ -201,14 +196,14 @@ class Game:
                 player.max_distance_slid = max(
                     artefact.distance, player.max_distance_slid
                 )
-                print(f"{player.name} slid to {player.token_position} due to Snake")
+                # print(f"{player.name} slid to {player.token_position} due to Snake")
             elif isinstance(artefact, Ladder):
                 player.number_of_lucky_rolls += 1
                 player.total_distance_climbed += artefact.distance
                 player.max_distance_climbed = max(
                     artefact.distance, player.max_distance_climbed
                 )
-                print(f"{player.name} climbed to {player.token_position} due to Ladder")
+                # print(f"{player.name} climbed to {player.token_position} due to Ladder")
         return die_roll
 
 
@@ -271,7 +266,7 @@ def read_conf_file() -> Tuple[bool, int, int, List[List[int]], List[List[int]]]:
         isSuccess = True
 
     if not isSuccess:
-        print(f"Invalid line: {line}")
+        print(f"Invalid configuration line: {line}")
 
     return (
         isSuccess,
@@ -280,6 +275,117 @@ def read_conf_file() -> Tuple[bool, int, int, List[List[int]], List[List[int]]]:
         snakes_conf,
         ladders_conf,
     )
+
+
+def print_simultation_statistics(game_stats: List[GameStats]):
+    # TODO: Write test for these simulations stat calculations
+    number_of_simulations = len(game_stats)
+
+    sum_number_of_win_rolls = 0
+    sum_distance_climbed = 0
+    sum_distance_slid = 0
+    sum_unlucky_rolls = 0
+    sum_lucky_rolls = 0
+    min_number_of_win_rolls = sys.maxsize
+    avg_number_of_win_rolls: float = 0.0
+    max_number_of_win_rolls = 0
+    min_distance_climbed = sys.maxsize
+    avg_distance_climbed: float = 0.0
+    max_distance_climbed = 0
+    min_distance_slid = sys.maxsize
+    avg_distance_slid: float = 0.0
+    max_distance_slid = 0
+    biggest_climb = 0
+    biggest_slide = 0
+    min_unlucky_rolls = sys.maxsize
+    avg_unlucky_rolls: float = 0.0
+    max_unlucky_rolls = 0
+    min_lucky_rolls = sys.maxsize
+    avg_lucky_rolls: float = 0.0
+    max_lucky_rolls = 0
+    max_streak = [0]
+    for game_stat in game_stats:
+        # print(f"{game_stat}")
+        min_number_of_win_rolls = min(
+            game_stat.game_number_of_rolls_to_win, min_number_of_win_rolls
+        )
+        max_number_of_win_rolls = max(
+            game_stat.game_number_of_rolls_to_win, max_number_of_win_rolls
+        )
+        sum_number_of_win_rolls += game_stat.game_number_of_rolls_to_win
+
+        min_distance_climbed = min(
+            game_stat.game_total_distance_climbed, min_distance_climbed
+        )
+        max_distance_climbed = max(
+            game_stat.game_total_distance_climbed, max_distance_climbed
+        )
+        sum_distance_climbed += game_stat.game_total_distance_climbed
+
+        min_distance_slid = min(game_stat.game_total_distance_slid, min_distance_slid)
+        max_distance_slid = max(game_stat.game_total_distance_slid, max_distance_slid)
+        sum_distance_slid += game_stat.game_total_distance_slid
+
+        biggest_climb = max(game_stat.game_max_distance_climbed, biggest_climb)
+        biggest_slide = max(game_stat.game_max_distance_slide, biggest_slide)
+
+        min_unlucky_rolls = min(game_stat.game_total_unlucky_rolls, min_unlucky_rolls)
+        max_unlucky_rolls = max(game_stat.game_total_unlucky_rolls, max_unlucky_rolls)
+        sum_unlucky_rolls += game_stat.game_total_unlucky_rolls
+
+        min_lucky_rolls = min(game_stat.game_total_lucky_rolls, min_lucky_rolls)
+        max_lucky_rolls = max(game_stat.game_total_lucky_rolls, max_lucky_rolls)
+        sum_lucky_rolls += game_stat.game_total_lucky_rolls
+
+        if sum(game_stat.game_max_streak) > sum(max_streak):
+            max_streak = game_stat.game_max_streak
+
+    avg_number_of_win_rolls = round(sum_number_of_win_rolls / number_of_simulations, 2)
+    avg_distance_climbed = round(sum_distance_climbed / number_of_simulations, 2)
+    avg_distance_slid = round(sum_distance_slid / number_of_simulations, 2)
+    avg_unlucky_rolls = round(sum_unlucky_rolls / number_of_simulations, 2)
+    avg_lucky_rolls = round(sum_lucky_rolls / number_of_simulations, 2)
+
+    print()
+    print(f"STATISTICS FOR {number_of_simulations} simulation run(s)")
+    print()
+
+    print("Winning rolls:")
+    print(f"Minimum = {min_number_of_win_rolls}")
+    print(f"Average = {avg_number_of_win_rolls}")
+    print(f"Maximum = {max_number_of_win_rolls}")
+
+    print()
+    print("Distance climbed:")
+    print(f"Minimum = {min_distance_climbed}")
+    print(f"Average = {avg_distance_climbed}")
+    print(f"Maximum = {max_distance_climbed}")
+
+    print()
+    print("Distance slid:")
+    print(f"Minimum = {min_distance_slid}")
+    print(f"Average = {avg_distance_slid}")
+    print(f"Maximum = {max_distance_slid}")
+
+    print()
+    print("Unlucky rolls:")
+    print(f"Minimum = {min_unlucky_rolls}")
+    print(f"Average = {avg_unlucky_rolls}")
+    print(f"Maximum = {max_unlucky_rolls}")
+
+    print()
+    print("Lucky rolls:")
+    print(f"Minimum = {min_lucky_rolls}")
+    print(f"Average = {avg_lucky_rolls}")
+    print(f"Maximum = {max_lucky_rolls}")
+
+    print()
+    print(f"Biggest climb = {biggest_climb}")
+    print(f"Biggest slide = {biggest_slide}")
+    print(f"Longest streak: {max_streak}")
+
+    print()
+    return
 
 
 def main() -> bool:
@@ -353,103 +459,11 @@ def main() -> bool:
         return False
 
     for simulation_number in range(1, number_of_simulations + 1):
-        print(f"Game simulation #{simulation_number} starting...")
-        winner = game.play(simulation_number)
-        for player in game.players:
-            print(player)
-        print(f"Winner = {winner}")
+        print(f"Game simulation #{simulation_number} running...")
+        game.play(simulation_number)
         game.reset_game_state()
-        print("Game finished")
 
-    sum_number_of_win_rolls = 0
-    sum_distance_climbed = 0
-    sum_distance_slid = 0
-    sum_unlucky_rolls = 0
-    sum_lucky_rolls = 0
-    min_number_of_win_rolls = sys.maxsize
-    avg_number_of_win_rolls: float = 0.0
-    max_number_of_win_rolls = 0
-    min_distance_climbed = sys.maxsize
-    avg_distance_climbed: float = 0.0
-    max_distance_climbed = 0
-    min_distance_slid = sys.maxsize
-    avg_distance_slid: float = 0.0
-    max_distance_slid = 0
-    biggest_climb = 0
-    biggest_slide = 0
-    min_unlucky_rolls = sys.maxsize
-    avg_unlucky_rolls: float = 0.0
-    max_unlucky_rolls = 0
-    min_lucky_rolls = sys.maxsize
-    avg_lucky_rolls: float = 0.0
-    max_lucky_rolls = 0
-    max_streak = [0]
-    for game_stat in game.game_stats:
-        print(f"{game_stat}")
-        min_number_of_win_rolls = min(
-            game_stat.game_number_of_rolls_to_win, min_number_of_win_rolls
-        )
-        max_number_of_win_rolls = max(
-            game_stat.game_number_of_rolls_to_win, max_number_of_win_rolls
-        )
-        sum_number_of_win_rolls += game_stat.game_number_of_rolls_to_win
-
-        min_distance_climbed = min(
-            game_stat.game_total_distance_climbed, min_distance_climbed
-        )
-        max_distance_climbed = max(
-            game_stat.game_total_distance_climbed, max_distance_climbed
-        )
-        sum_distance_climbed += game_stat.game_total_distance_climbed
-
-        min_distance_slid = min(game_stat.game_total_distance_slid, min_distance_slid)
-        max_distance_slid = max(game_stat.game_total_distance_slid, max_distance_slid)
-        sum_distance_slid += game_stat.game_total_distance_slid
-
-        biggest_climb = max(game_stat.game_biggest_climb, biggest_climb)
-        biggest_slide = max(game_stat.game_biggest_climb, biggest_slide)
-
-        min_unlucky_rolls = min(game_stat.game_total_unlucky_rolls, min_unlucky_rolls)
-        max_unlucky_rolls = max(game_stat.game_total_unlucky_rolls, max_unlucky_rolls)
-        sum_unlucky_rolls += game_stat.game_total_unlucky_rolls
-
-        min_lucky_rolls = min(game_stat.game_total_lucky_rolls, min_lucky_rolls)
-        max_lucky_rolls = max(game_stat.game_total_lucky_rolls, max_lucky_rolls)
-        sum_lucky_rolls += game_stat.game_total_lucky_rolls
-
-        if sum(game_stat.game_max_streak) > sum(max_streak):
-            max_streak = game_stat.game_max_streak
-
-    avg_number_of_win_rolls = round(sum_number_of_win_rolls / number_of_simulations, 2)
-    avg_distance_climbed = round(sum_distance_climbed / number_of_simulations, 2)
-    avg_distance_slid = round(sum_distance_slid / number_of_simulations, 2)
-    avg_unlucky_rolls = round(sum_unlucky_rolls / number_of_simulations, 2)
-    avg_lucky_rolls = round(sum_lucky_rolls / number_of_simulations, 2)
-
-    print(f"{min_number_of_win_rolls=}")
-    print(f"{avg_number_of_win_rolls=}")
-    print(f"{max_number_of_win_rolls=}")
-
-    print(f"{min_distance_climbed=}")
-    print(f"{avg_distance_climbed=}")
-    print(f"{max_distance_climbed=}")
-
-    print(f"{min_distance_slid=}")
-    print(f"{avg_distance_slid=}")
-    print(f"{max_distance_slid=}")
-
-    print(f"{biggest_climb=}")
-    print(f"{biggest_slide=}")
-
-    print(f"{min_unlucky_rolls=}")
-    print(f"{avg_unlucky_rolls=}")
-    print(f"{max_unlucky_rolls=}")
-
-    print(f"{min_lucky_rolls=}")
-    print(f"{avg_lucky_rolls=}")
-    print(f"{max_lucky_rolls=}")
-
-    print(f"{max_streak=}")
+    print_simultation_statistics(game.game_stats)
 
     return True
 

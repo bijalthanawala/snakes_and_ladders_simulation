@@ -26,12 +26,18 @@ and also has instructions on how to change any.
 
 
 USAGE:
-To run, type following on the command line:
+To run, type following on the command line - while in the root of the project
+directory:
 
 python3 snake_ladder_simulation.py
 
 
-TESTED:
+TEST:
+The bundled tests are written with pytest and can be run with following
+command - while in the root of the project directory:
+
+pytest --verbose
+
 The simulator has been so far tested on, and known to work on
     - Apple MacOS
     - Fedora Linux
@@ -53,7 +59,5 @@ NOTES:
 * Bounce back:
     If a player rolls more than the last n required to win, then the token will be bounced back
     eg. a player on 97 (who needs 3 to win) rolls 5 will bounce back to 98 (100-2)
-
-
 
 ================================================
