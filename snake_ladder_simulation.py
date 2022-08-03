@@ -11,10 +11,10 @@ from game_exceptions import get_user_friendly_error_message
 class Game:
 
     ERROR_MESSAGE_ACTIVATION_DUPLICATED = (
-        "Can not add snake/ladder that shares head/bottom with another snake/ladder"
+        "Can not add a snake/ladder that shares head/bottom with another snake/ladder"
     )
     ERROR_MESSAGE_ACTIVATION_CLASH = (
-        "Can not add snake/ladder that starts where another ends"
+        "Can not add a snake/ladder that starts where another ends"
     )
     ERROR_MESSAGE_UNSUPPORTED_ARTEFACT = (
         "Neither snake, nor ladder! Unsupported game object"
@@ -43,7 +43,7 @@ class Game:
         self.ladders: List[Ladder] = []
         self.die: Die = die
         self.activation_points_map: Dict[int, Artefact] = dict()
-        self.termination_points: List[int] = []
+        self.termination_points: Set[int] = set()
         self.lucky_positions: Set[int] = set()
         self.curr_player_ndx: int = 0
         self.stats: "Game.Stats" = self.Stats()
@@ -79,11 +79,11 @@ class Game:
         # Ensure that the snakes and the ladders to be placed on the board,
         # do not have start and end on the same position
         # TODO: Avoid re-iterating over artefacts
-        termination_points = [
+        all_termination_points = [
             artefact.termination_point for artefact in artefacts
-        ] + self.termination_points
-        overlaps = set(activation_points) & set(termination_points)
-        print(f"{termination_points=}")
+        ] + list(self.termination_points)
+        overlaps = set(activation_points) & set(all_termination_points)
+        print(f"{all_termination_points=}")
         print(f"{overlaps=}")
         if len(overlaps):
             return (False, self.ERROR_MESSAGE_ACTIVATION_CLASH)
@@ -93,7 +93,8 @@ class Game:
             artefact.activation_point: artefact for artefact in artefacts
         }
         self.activation_points_map.update(new_activation_points)
-        self.termination_points = termination_points
+        self.termination_points = set(all_termination_points)
+        print(f"{self.termination_points=}")
 
         # record lucky positions 1 or 2 positions aways from snakes
         # TODO: Exclude positions that has another snake on it
