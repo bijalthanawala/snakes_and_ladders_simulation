@@ -62,13 +62,8 @@ class Game:
             self.players.append(player)
 
     def add_artefacts(self, artefacts: List[Artefact]) -> Tuple[bool, str]:
-        artefact: Artefact  # Used in the for loops
 
-        for artefact in artefacts:
-            print(artefact)
-
-        # Ensure that the snakes and the ladders to be placed on the board,
-        # do not start at the same position
+        # Ensure: Snakes and the ladders to be placed on the board, do not start at the same position
         activation_points = [
             artefact.activation_point for artefact in artefacts
         ] + list(self.activation_points_map.keys())
@@ -76,9 +71,7 @@ class Game:
         if len(activation_points) != len(set(activation_points)):
             return False, self.ERROR_MESSAGE_ACTIVATION_DUPLICATED
 
-        # Ensure that the snakes and the ladders to be placed on the board,
-        # do not have start and end on the same position
-        # TODO: Avoid re-iterating over artefacts
+        # Ensure: Snakes and the ladders to be placed on the board, do not have start and end on the same position
         all_termination_points = [
             artefact.termination_point for artefact in artefacts
         ] + list(self.termination_points)
@@ -114,10 +107,8 @@ class Game:
         # Finally add all artefacts to the board
         for artefact in artefacts:
             if isinstance(artefact, Snake):
-                print("Adding snake")
                 self.snakes.append(artefact)
             elif isinstance(artefact, Ladder):
-                print("Adding ladder")
                 self.ladders.append(artefact)
             else:
                 return (
@@ -130,9 +121,7 @@ class Game:
     def play(self) -> Union[Player, None]:
         winner: Union[Player, None] = None
         curr_streak = []
-        if not self.players:
-            print(f"There are no players. Quitting game.")
-            return None
+
         while True:
             winner = self.spot_winner()
             if winner:
@@ -146,16 +135,10 @@ class Game:
             curr_player.number_of_rolls += 1
             curr_streak.append(die_roll)
             if die_roll != Const.DIE_ROLL_REPEAT:
-                # print( f"{curr_streak=} ,  {curr_player.name}'s {curr_player.max_streak=}")
-                if sum(curr_streak) > sum(
-                    curr_player.max_streak
-                ):  # TODO: How do we unit-test this logic?
+                if sum(curr_streak) > sum(curr_player.max_streak):
                     curr_player.max_streak = curr_streak
                 self.curr_player_ndx = (self.curr_player_ndx + 1) % len(self.players)
                 curr_streak = []
-            else:
-                # print(f"{curr_player.name} earns a repeat die roll")
-                pass
 
         self.record_game_stat(winner)
         return winner
@@ -185,9 +168,8 @@ class Game:
         return None
 
     def move_token(self, player: Player, die_roll: int) -> int:  # TODO: test this
-        # First handle the case if the player is near the end of the board
         if player.token_position + die_roll > Const.BOARD_POSITION_MAX:
-            # bounce back
+            # Bounce back if we are overshooting the board
             die_roll = Const.BOARD_POSITION_MAX - (player.token_position + die_roll)
             print(f"{player.name} bouncing back by {die_roll}")
 
@@ -223,14 +205,14 @@ class Game:
                 player.max_distance_slid = max(
                     artefact.distance, player.max_distance_slid
                 )
-                print(f"{player.name} moved to {player.token_position} due to Snake")
+                print(f"{player.name} slid to {player.token_position} due to Snake")
             elif isinstance(artefact, Ladder):
                 player.number_of_lucky_rolls += 1
                 player.total_distance_climbed += artefact.distance
                 player.max_distance_climbed = max(
                     artefact.distance, player.max_distance_climbed
                 )
-                print(f"{player.name} moved to {player.token_position} due to Ladder")
+                print(f"{player.name} climbed to {player.token_position} due to Ladder")
         return die_roll
 
 
@@ -261,9 +243,7 @@ def read_conf_file() -> Tuple[bool, int, int, List[List[int]], List[List[int]]]:
         )
 
     for line in raw_config_lines:
-        line = line.strip().split("#")[
-            0
-        ]  # Handles full-line comments and also comments after the key-value pair
+        line = line.strip().split("#")[0]  # Strip away the comments
         if not line:
             continue
         config = line.split("=")
@@ -306,17 +286,12 @@ def read_conf_file() -> Tuple[bool, int, int, List[List[int]], List[List[int]]]:
     )
 
 
-def main():
+def main() -> bool:
     players: List[Player] = []
-    snakes: List[Snake] = []
-    ladders: List[Ladder] = []
+    snakes: List[Artefact] = []
+    ladders: List[Artefact] = []
 
-    isSuccess: bool
-    number_of_simulations: int
-    number_of_players: int
-    snakes_conf: List[List[int]]
-    ladders_conf: List[List[int]]
-    print("Reading game configuration...")
+    # Read game configurations
     (
         isSuccess,
         number_of_simulations,
@@ -326,8 +301,17 @@ def main():
     ) = read_conf_file()
     if not isSuccess:
         print("Error reading config file. Quitting")
-        return
+        return False
 
+    if number_of_players == 0:
+        print("There are no players. Quitting")
+        return False
+
+    if number_of_simulations == 0:
+        print("No simulations to run. Quitting")
+        return False
+
+    # Instantiate snakes as per the configuration
     for head, tail in snakes_conf:
         try:
             snakes.append(Snake(head=head, tail=tail))
@@ -338,8 +322,9 @@ def main():
                 )
             )
             print("Please fix the configuration and re-rerun")
-            return
+            return False
 
+    # Instantiate ladders as per the configuration
     for bottom, top in ladders_conf:
         try:
             ladders.append(Ladder(top=top, bottom=bottom))
@@ -350,8 +335,9 @@ def main():
                 )
             )
             print("Please fix the configuration and re-rerun")
-            return
+            return False
 
+    # Instantiate players as per the configuration
     for n in range(1, number_of_players + 1):
         players.append(Player(f"Player_{n}"))
 
@@ -361,22 +347,24 @@ def main():
     pprint.pprint(snakes)
     pprint.pprint(ladders)
 
-    print("Game starting...")
-
+    # Set up the game
     game = Game(Die())
     game.add_players(players)
-
     isSuccess, err_message = game.add_artefacts(snakes + ladders)
     if not isSuccess:
         print(f"Error: {err_message}")
         print("Please fix the configuration and re-rerun")
-        return
+        return False
+
+    print("Game starting...")
     winner = game.play()
     for player in game.players:
         print(player)
     print(f"Winner = {winner}")
     print(f"{game.stats}")
     print("Game finished")
+
+    return True
 
 
 if __name__ == "__main__":
