@@ -43,16 +43,16 @@ class Artefact:
 
 
 class Snake(Artefact):
-    def __init__(self, mouth, tail):
-        super().__init__(activation_point=mouth, termination_point=tail)
-        if mouth < tail:
+    def __init__(self, head, tail):
+        super().__init__(activation_point=head, termination_point=tail)
+        if head < tail:
             raise EXCEPTION_ARTEFACT_INVERSE
-        if mouth == Const.BOARD_POSITION_MAX:
+        if head == Const.BOARD_POSITION_MAX:
             raise EXCEPTION_SNAKE_AT_WINNING_POSITION
-        self.mouth = mouth
+        self.head = head
 
     def __repr__(self):
-        return f"Snake: head={self.mouth} tail={self.termination_point}, length={self.distance}"
+        return f"Snake: head={self.head} tail={self.termination_point}, length={self.distance}"
 
     def __str__(self):
         return self.__repr__()

@@ -100,14 +100,14 @@ class Game:
         # TODO: Avoid re-iterating over artefacts
         for artefact in artefacts:
             if isinstance(artefact, Snake):
-                if artefact.mouth + 1 <= Const.BOARD_POSITION_MAX:
-                    self.lucky_positions.add(artefact.mouth + 1)
-                    if artefact.mouth + 2 <= Const.BOARD_POSITION_MAX:
-                        self.lucky_positions.add(artefact.mouth + 2)
-                if artefact.mouth - 1 >= Const.BOARD_POSITION_MIN:
-                    self.lucky_positions.add(artefact.mouth - 1)
-                    if artefact.mouth - 2 >= Const.BOARD_POSITION_MIN:
-                        self.lucky_positions.add(artefact.mouth - 2)
+                if artefact.head + 1 <= Const.BOARD_POSITION_MAX:
+                    self.lucky_positions.add(artefact.head + 1)
+                    if artefact.head + 2 <= Const.BOARD_POSITION_MAX:
+                        self.lucky_positions.add(artefact.head + 2)
+                if artefact.head - 1 >= Const.BOARD_POSITION_MIN:
+                    self.lucky_positions.add(artefact.head - 1)
+                    if artefact.head - 2 >= Const.BOARD_POSITION_MIN:
+                        self.lucky_positions.add(artefact.head - 2)
         print(f"{self.lucky_positions=}")
 
         # Finally add all artefacts to the board
@@ -327,7 +327,7 @@ def main():
 
     for head, tail in snakes_conf:
         try:
-            snakes.append(Snake(mouth=head, tail=tail))
+            snakes.append(Snake(head=head, tail=tail))
         except Exception as exception:
             print(
                 get_user_friendly_error_message(

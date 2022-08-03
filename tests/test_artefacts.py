@@ -74,7 +74,7 @@ class Test_artefacts:
         assert excinfo.type == EXCEPTION_ARTEFACT_INVALID_POSITION
 
     def test_valid_snake(self):
-        snake = Snake(mouth=50, tail=30)
+        snake = Snake(head=50, tail=30)
         assert snake.activation_point == 50
         assert snake.termination_point == 30
 
@@ -85,7 +85,7 @@ class Test_artefacts:
 
     def test_invalid_snake_inverse(self):
         with pytest.raises(Exception) as excinfo:
-            _ = Snake(mouth=30, tail=50)
+            _ = Snake(head=30, tail=50)
         assert excinfo.type == EXCEPTION_ARTEFACT_INVERSE
 
     def test_invalid_ladder_inverse(self):
@@ -95,13 +95,13 @@ class Test_artefacts:
 
     def test_invalid_snake_placed_at_winning_position(self):
         with pytest.raises(Exception) as excinfo:
-            _ = Snake(mouth=Const.BOARD_POSITION_MAX, tail=50)
+            _ = Snake(head=Const.BOARD_POSITION_MAX, tail=50)
         assert excinfo.type == EXCEPTION_SNAKE_AT_WINNING_POSITION
 
     def test_add_artefacts(self, game):
         isSuccess, _ = game.add_artefacts(
             [
-                Snake(mouth=50, tail=30),
+                Snake(head=50, tail=30),
             ]
         )
         assert isSuccess == True
@@ -119,9 +119,9 @@ class Test_artefacts:
     @pytest.mark.parametrize(
         "artefacts_with_same_activation_points",
         [
-            [Snake(mouth=50, tail=30), Snake(mouth=50, tail=20)],
+            [Snake(head=50, tail=30), Snake(head=50, tail=20)],
             [Ladder(top=50, bottom=30), Ladder(top=70, bottom=30)],
-            [Snake(mouth=50, tail=30), Ladder(top=60, bottom=50)],
+            [Snake(head=50, tail=30), Ladder(top=60, bottom=50)],
         ],
     )
     def test_add_artefacts_with_same_initiation_points(
@@ -136,8 +136,8 @@ class Test_artefacts:
     @pytest.mark.parametrize(
         "artefacts_with_same_initiation_and_termination_points",
         [
-            [Snake(mouth=50, tail=30), Ladder(top=60, bottom=30)],
-            [Snake(mouth=50, tail=30), Ladder(top=50, bottom=10)],
+            [Snake(head=50, tail=30), Ladder(top=60, bottom=30)],
+            [Snake(head=50, tail=30), Ladder(top=50, bottom=10)],
         ],
     )
     def test_add_artefacts_snake_and_ladder_with_same_initiation_and_termination_points(
