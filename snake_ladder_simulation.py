@@ -367,21 +367,21 @@ def main() -> bool:
     sum_unlucky_rolls = 0
     sum_lucky_rolls = 0
     min_number_of_win_rolls = sys.maxsize
-    avg_number_of_win_rolls: float = 0
+    avg_number_of_win_rolls: float = 0.0
     max_number_of_win_rolls = 0
     min_distance_climbed = sys.maxsize
-    avg_distance_climbed: float = 0
+    avg_distance_climbed: float = 0.0
     max_distance_climbed = 0
     min_distance_slid = sys.maxsize
-    avg_distance_slid: float = 0
+    avg_distance_slid: float = 0.0
     max_distance_slid = 0
     biggest_climb = 0
     biggest_slide = 0
     min_unlucky_rolls = sys.maxsize
-    avg_unlucky_rolls: float = 0
+    avg_unlucky_rolls: float = 0.0
     max_unlucky_rolls = 0
     min_lucky_rolls = sys.maxsize
-    avg_lucky_rolls = 0.0
+    avg_lucky_rolls: float = 0.0
     max_lucky_rolls = 0
     max_streak = [0]
     for game_stat in game.game_stats:
