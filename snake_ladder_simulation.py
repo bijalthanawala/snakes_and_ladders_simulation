@@ -5,17 +5,20 @@ from constants import Constants as Const
 from player import Player
 from artefact import Artefact, Snake, Ladder
 from die import Die
+from game_exceptions import get_user_friendly_error_message
 
 
 class Game:
 
     ERROR_MESSAGE_ACTIVATION_DUPLICATED = (
-        "Activation point duplicated with other artefacts"
+        "Can not add snake/ladder that shares head/bottom with another snake/ladder"
     )
     ERROR_MESSAGE_ACTIVATION_CLASH = (
-        "Some activation point sharing termination point with other artefacts"
+        "Can not add snake/ladder that starts where another ends"
     )
-    ERROR_MESSAGE_UNSUPPORTED_ARTEFACT = "Unsupported artefact"
+    ERROR_MESSAGE_UNSUPPORTED_ARTEFACT = (
+        "Neither snake, nor ladder! Unsupported game object"
+    )
 
     class Stats:
         def __init__(self):
@@ -59,7 +62,7 @@ class Game:
             self.players.append(player)
 
     def add_artefacts(self, artefacts: List[Artefact]) -> Tuple[bool, str]:
-        artefact: Artefact  # Used in for loops
+        artefact: Artefact  # Used in the for loops
 
         for artefact in artefacts:
             print(artefact)
@@ -323,10 +326,28 @@ def main():
         return
 
     for head, tail in snakes_conf:
-        snakes.append(Snake(mouth=head, tail=tail))
+        try:
+            snakes.append(Snake(mouth=head, tail=tail))
+        except Exception as exception:
+            print(
+                get_user_friendly_error_message(
+                    "Snake", exception, top=head, bottom=tail
+                )
+            )
+            print("Please fix the configuration and re-rerun")
+            return
 
-    for top, bottom in ladders_conf:
-        ladders.append(Ladder(top=top, bottom=bottom))
+    for bottom, top in ladders_conf:
+        try:
+            ladders.append(Ladder(top=top, bottom=bottom))
+        except Exception as exception:
+            print(
+                get_user_friendly_error_message(
+                    "Ladder", exception, top=top, bottom=bottom
+                )
+            )
+            print("Please fix the configuration and re-rerun")
+            return
 
     for n in range(1, number_of_players + 1):
         players.append(Player(f"Player_{n}"))
@@ -345,7 +366,7 @@ def main():
     isSuccess, err_message = game.add_artefacts(snakes + ladders)
     if not isSuccess:
         print(f"Error: {err_message}")
-        print("Quitting")
+        print("Please fix the configuration and re-rerun")
         return
     winner = game.play()
     for player in game.players:
