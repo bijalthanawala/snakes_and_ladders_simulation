@@ -15,7 +15,7 @@ from snake_ladder_simulation import Game
 class Test_artefacts:
     @pytest.fixture
     def game(self):
-        return Game(Die())
+        return Game(Die(), number_of_simulations=1)
 
     def test_artefact_spans_board(self):
         with pytest.raises(Exception) as excinfo:

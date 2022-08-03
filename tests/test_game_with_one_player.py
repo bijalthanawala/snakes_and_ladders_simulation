@@ -19,11 +19,11 @@ class Mock_Die:
 class Test_GameWithOnePlayer:
     def test_one_player_finish_with_no_snake_no_ladder(self):
         repeat_roll = 5
-        game = Game(Mock_Die([repeat_roll]))
+        game = Game(Mock_Die([repeat_roll]), number_of_simulations=1)
         player1: Player = Player("P1")
         game.add_players([player1])
 
-        game.play()
+        game.play(simulation_number=1)
 
         assert player1.token_position == Const.BOARD_POSITION_MAX
         assert player1.number_of_rolls == Const.BOARD_POSITION_MAX / repeat_roll
@@ -35,13 +35,13 @@ class Test_GameWithOnePlayer:
 
     def test_one_player_finish_with_one_ladder(self):
         repeat_roll = 5
-        game = Game(Mock_Die([repeat_roll]))
+        game = Game(Mock_Die([repeat_roll]), number_of_simulations=1)
         player1: Player = Player("P1")
         ladder1: Ladder = Ladder(top=100, bottom=5)
         game.add_players([player1])
         game.add_artefacts([ladder1])
 
-        game.play()
+        game.play(simulation_number=1)
 
         assert player1.token_position == Const.BOARD_POSITION_MAX
         assert player1.number_of_rolls == 1
@@ -54,13 +54,13 @@ class Test_GameWithOnePlayer:
         mock_rolls = [5, 5, 5]  # Slid down the snake to position 1
         mock_rolls += [6, 3]  # On 10th position
         mock_rolls += [6, 4] * 9
-        game = Game(Mock_Die(mock_rolls))
+        game = Game(Mock_Die(mock_rolls), number_of_simulations=1)
         player1: Player = Player("P1")
         snake1: Snake = Snake(head=15, tail=1)
         game.add_players([player1])
         game.add_artefacts([snake1])
 
-        game.play()
+        game.play(simulation_number=1)
 
         assert player1.token_position == Const.BOARD_POSITION_MAX
         assert player1.number_of_rolls == len(mock_rolls)
@@ -75,14 +75,14 @@ class Test_GameWithOnePlayer:
     def test_one_player_finish_with_two_ladders(self):
         mock_rolls = [5, 5]  # Go up the ladder - 15 to 50
         mock_rolls += [5, 5, 5]  # Go up the ladder - 65 to 100
-        game = Game(Mock_Die(mock_rolls))
+        game = Game(Mock_Die(mock_rolls), number_of_simulations=1)
         player1: Player = Player("P1")
         ladder1: Ladder = Ladder(top=50, bottom=10)
         ladder2: Ladder = Ladder(top=100, bottom=65)
         game.add_players([player1])
         game.add_artefacts([ladder1, ladder2])
 
-        game.play()
+        game.play(simulation_number=1)
 
         assert player1.token_position == Const.BOARD_POSITION_MAX
         assert player1.number_of_rolls == len(mock_rolls)
@@ -97,14 +97,14 @@ class Test_GameWithOnePlayer:
         mock_rolls += [6, 3]  # On 10th position
         mock_rolls += [6, 4] * 8  # Slid down the snake to position 80
         mock_rolls += [5, 6, 4, 5]
-        game = Game(Mock_Die(mock_rolls))
+        game = Game(Mock_Die(mock_rolls), number_of_simulations=1)
         player1: Player = Player("P1")
         snake1: Snake = Snake(head=15, tail=1)
         snake2: Snake = Snake(head=90, tail=80)
         game.add_players([player1])
         game.add_artefacts([snake1, snake2])
 
-        game.play()
+        game.play(simulation_number=1)
 
         assert player1.token_position == Const.BOARD_POSITION_MAX
         assert player1.number_of_rolls == len(mock_rolls)
@@ -122,11 +122,11 @@ class Test_GameWithOnePlayer:
         mock_rolls += [6, 6, 4, 4]
         mock_rolls += [6, 6, 6, 4, 4, 4]
         mock_rolls += [6, 6, 6, 6, 4, 4, 4, 4]
-        game = Game(Mock_Die(mock_rolls))
+        game = Game(Mock_Die(mock_rolls), number_of_simulations=1)
         player1: Player = Player("P1")
         game.add_players([player1])
 
-        game.play()
+        game.play(simulation_number=1)
 
         assert player1.token_position == Const.BOARD_POSITION_MAX
         assert player1.number_of_rolls == len(mock_rolls)
