@@ -277,8 +277,9 @@ def read_conf_file() -> Tuple[bool, int, int, List[List[int]], List[List[int]]]:
     )
 
 
-def print_simultation_statistics(game_stats: List[GameStats]):
-    # TODO: Write test for these simulations stat calculations
+def print_simultation_statistics(game_stats: List[GameStats], number_of_players):
+    # TODO: Decouple calculation and printing
+    # TODO: Write test for these simulations-level calculations
     number_of_simulations = len(game_stats)
 
     sum_number_of_win_rolls = 0
@@ -347,8 +348,9 @@ def print_simultation_statistics(game_stats: List[GameStats]):
     avg_lucky_rolls = round(sum_lucky_rolls / number_of_simulations, 2)
 
     print()
-    print(f"STATISTICS FOR {number_of_simulations} simulation run(s)")
-    print()
+    print(
+        f"STATISTICS FOR {number_of_players} PLAYERS OVER {number_of_simulations} SIMULATION RUN(S)"
+    )
 
     print("Winning rolls:")
     print(f"Minimum = {min_number_of_win_rolls}")
@@ -446,8 +448,11 @@ def main() -> bool:
     print("CONFIGURATION:")
     print(f"Number of simulations: {number_of_simulations}")
     print(f"Number of players: {number_of_players}")
-    pprint.pprint(snakes)
-    pprint.pprint(ladders)
+    print(f"Number of snakes: {len(snakes)}")
+    print(f"Number of ladders: {len(ladders)}")
+    # pprint.pprint(snakes)
+    # pprint.pprint(ladders)
+    print()
 
     # Set up the game
     game = Game(Die(), number_of_simulations)
@@ -463,7 +468,7 @@ def main() -> bool:
         game.play(simulation_number)
         game.reset_game_state()
 
-    print_simultation_statistics(game.game_stats)
+    print_simultation_statistics(game.game_stats, number_of_players)
 
     return True
 
