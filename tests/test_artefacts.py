@@ -20,6 +20,31 @@ class Test_artefacts:
     def game(self):
         return Game(Die(), number_of_simulations=1)
 
+    def test_valid_snake(self):
+        snake = Snake(head=50, tail=30)
+        assert snake.activation_point == 50
+        assert snake.termination_point == 30
+
+    def test_valid_ladder(self):
+        ladder = Ladder(bottom=30, top=50)
+        assert ladder.activation_point == 30
+        assert ladder.termination_point == 50
+
+    def test_invalid_snake_placed_at_winning_position(self):
+        with pytest.raises(Exception) as excinfo:
+            _ = Snake(head=Const.BOARD_POSITION_MAX, tail=50)
+        assert excinfo.type == EXCEPTION_SNAKE_AT_WINNING_POSITION
+
+    def test_invalid_snake_inverse(self):
+        with pytest.raises(Exception) as excinfo:
+            _ = Snake(head=30, tail=50)
+        assert excinfo.type == EXCEPTION_ARTEFACT_INVERSE
+
+    def test_invalid_ladder_inverse(self):
+        with pytest.raises(Exception) as excinfo:
+            _ = Ladder(bottom=50, top=30)
+        assert excinfo.type == EXCEPTION_ARTEFACT_INVERSE
+
     def test_artefact_spans_board(self):
         with pytest.raises(Exception) as excinfo:
             _ = Artefact(
@@ -56,7 +81,7 @@ class Test_artefacts:
             {
                 "activation_point": 51,
                 "termination_point": 60,
-            },  # Longes invalid that fits a role
+            },  # Longest invalid that fits a row
         ],
     )
     def test_artefact_invalid_length(self, invalid_short_length):
@@ -76,32 +101,7 @@ class Test_artefacts:
             _ = Artefact(**invalid_position)
         assert excinfo.type == EXCEPTION_ARTEFACT_INVALID_POSITION
 
-    def test_valid_snake(self):
-        snake = Snake(head=50, tail=30)
-        assert snake.activation_point == 50
-        assert snake.termination_point == 30
-
-    def test_valid_ladder(self):
-        ladder = Ladder(bottom=30, top=50)
-        assert ladder.activation_point == 30
-        assert ladder.termination_point == 50
-
-    def test_invalid_snake_inverse(self):
-        with pytest.raises(Exception) as excinfo:
-            _ = Snake(head=30, tail=50)
-        assert excinfo.type == EXCEPTION_ARTEFACT_INVERSE
-
-    def test_invalid_ladder_inverse(self):
-        with pytest.raises(Exception) as excinfo:
-            _ = Ladder(bottom=50, top=30)
-        assert excinfo.type == EXCEPTION_ARTEFACT_INVERSE
-
-    def test_invalid_snake_placed_at_winning_position(self):
-        with pytest.raises(Exception) as excinfo:
-            _ = Snake(head=Const.BOARD_POSITION_MAX, tail=50)
-        assert excinfo.type == EXCEPTION_SNAKE_AT_WINNING_POSITION
-
-    def test_add_artefacts(self, game):
+    def test_add_artefacts_valid(self, game):
         isSuccess, _ = game.add_artefacts(
             [
                 Snake(head=50, tail=30),
@@ -127,7 +127,7 @@ class Test_artefacts:
             [Snake(head=50, tail=30), Ladder(top=60, bottom=50)],
         ],
     )
-    def test_add_artefacts_with_same_initiation_points(
+    def test_add_artefacts_invalid_with_same_initiation_points(
         self, game: Game, artefacts_with_same_activation_points
     ):
         isSuccess, error_message = game.add_artefacts(
@@ -143,7 +143,7 @@ class Test_artefacts:
             [Snake(head=50, tail=30), Ladder(top=50, bottom=10)],
         ],
     )
-    def test_add_artefacts_snake_and_ladder_with_same_initiation_and_termination_points(
+    def test_add_artefacts_invalid_snake_and_ladder_with_same_initiation_and_termination_points(
         self, game: Game, artefacts_with_same_initiation_and_termination_points
     ):
         isSuccess, error_message = game.add_artefacts(
