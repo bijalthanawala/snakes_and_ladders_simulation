@@ -45,19 +45,24 @@ class Game:
             self.players.append(player)
 
     def add_artefacts(self, artefacts: List[Artefact]) -> Tuple[bool, str]:
-        # Ensure: Snakes and the ladders to be placed on the board, do not start at the same position
-        activation_points = [
+        # Ensure that the snakes and the ladders do not start at the same position
+        # (take into consideration snakes and ladders in this list, and alse those
+        # already placed on the board)
+        all_activation_points = [
             artefact.activation_point for artefact in artefacts
         ] + list(self.activation_points_map.keys())
-        logging.debug(f"add_artefact: {activation_points=}")
-        if len(activation_points) != len(set(activation_points)):
+        logging.debug(f"add_artefact: {all_activation_points=}")
+        if len(all_activation_points) != len(set(all_activation_points)):
             return False, ERROR_MESSAGE_ACTIVATION_DUPLICATED
 
-        # Ensure: Snakes and the ladders to be placed on the board, do not have start and end on the same position
+        # Ensure that the snakes and the ladders do not have the start and the end
+        # on the same position
+        # (take into consideration snakes and ladders in this list, and alse those
+        # already placed on the board)
         all_termination_points = [
             artefact.termination_point for artefact in artefacts
         ] + list(self.termination_points)
-        overlaps = set(activation_points) & set(all_termination_points)
+        overlaps = set(all_activation_points) & set(all_termination_points)
         logging.debug(f"add_artefacts: {all_termination_points=}")
         logging.debug(
             f"add_artefacts: Overlap between activation and termination points = {overlaps}"
@@ -66,10 +71,10 @@ class Game:
             return (False, ERROR_MESSAGE_ACTIVATION_CLASH)
 
         # Update internal records of activation, termination and lucky positions
-        new_activation_points = {
+        new_activation_points_map = {
             artefact.activation_point: artefact for artefact in artefacts
         }
-        self.activation_points_map.update(new_activation_points)
+        self.activation_points_map.update(new_activation_points_map)
         self.termination_points = set(all_termination_points)
         logging.debug(f"add_artefacts: {self.termination_points=}")
 
