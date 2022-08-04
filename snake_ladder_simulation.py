@@ -44,6 +44,24 @@ class Game:
         for player in players:
             self.players.append(player)
 
+    def update_lucky_positions(self, snake: Snake, heads_of_snakes_on_board: List[int]):
+        # This method records lucky positions (1 or 2 positions aways from snakes)
+        lucky_positions_after_snake = [snake.head + 1, snake.head + 2]
+        lucky_positions_before_snake = [snake.head - 1, snake.head - 2]
+
+        for after in lucky_positions_after_snake:
+            if (
+                after not in heads_of_snakes_on_board
+                and after <= Const.BOARD_POSITION_MAX
+            ):
+                self.lucky_positions.add(after)
+        for before in lucky_positions_before_snake:
+            if (
+                before not in heads_of_snakes_on_board
+                and before >= Const.BOARD_POSITION_MIN
+            ):
+                self.lucky_positions.add(before)
+
     def add_artefacts(self, artefacts: List[Artefact]) -> Tuple[bool, str]:
         # Ensure that the snakes and the ladders do not start at the same position
         # (take into consideration snakes and ladders in this list, and alse those
@@ -83,24 +101,13 @@ class Game:
         logging.debug(f"add_artefacts: Updated {self.activation_points_map=}")
         logging.debug(f"add_artefacts: Updated {self.termination_points=}")
 
-        # Record lucky positions (1 or 2 positions aways from snakes)
-        # TODO:  Exclude positions with snake's head from this lucky positions list
-        for artefact in artefacts:
-            if isinstance(artefact, Snake):
-                if artefact.head + 1 <= Const.BOARD_POSITION_MAX:
-                    self.lucky_positions.add(artefact.head + 1)
-                    if artefact.head + 2 <= Const.BOARD_POSITION_MAX:
-                        self.lucky_positions.add(artefact.head + 2)
-                if artefact.head - 1 >= Const.BOARD_POSITION_MIN:
-                    self.lucky_positions.add(artefact.head - 1)
-                    if artefact.head - 2 >= Const.BOARD_POSITION_MIN:
-                        self.lucky_positions.add(artefact.head - 2)
-        logging.debug(f"add_artefacts: {len(self.lucky_positions)=}")
-        logging.debug(f"add_artefacts: {self.lucky_positions=}")
-
         # Finally add all the artefacts to the board
+        heads_of_snakes_on_board = [
+            x[0] for x in self.activation_points_map.items() if isinstance(x[1], Snake)
+        ]
         for artefact in artefacts:
             if isinstance(artefact, Snake):
+                self.update_lucky_positions(artefact, heads_of_snakes_on_board)
                 self.snakes.append(artefact)
             elif isinstance(artefact, Ladder):
                 self.ladders.append(artefact)
@@ -109,6 +116,9 @@ class Game:
                     False,
                     ERROR_MESSAGE_UNSUPPORTED_ARTEFACT,
                 )  # TODO: Write test for this
+
+        logging.debug(f"add_artefacts: {len(self.lucky_positions)=}")
+        logging.debug(f"add_artefacts: {self.lucky_positions=}")
 
         return True, ""
 
