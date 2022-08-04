@@ -1,6 +1,8 @@
 import sys
 from typing import Union, List, Tuple, Dict, Set
 import pprint
+import argparse
+import logging
 
 from constants import Constants as Const
 from player import Player
@@ -47,7 +49,7 @@ class Game:
         activation_points = [
             artefact.activation_point for artefact in artefacts
         ] + list(self.activation_points_map.keys())
-        # print(f"{activation_points=}")
+        logging.debug(f"add_artefact: {activation_points=}")
         if len(activation_points) != len(set(activation_points)):
             return False, ERROR_MESSAGE_ACTIVATION_DUPLICATED
 
@@ -56,8 +58,10 @@ class Game:
             artefact.termination_point for artefact in artefacts
         ] + list(self.termination_points)
         overlaps = set(activation_points) & set(all_termination_points)
-        # print(f"{all_termination_points=}")
-        # print(f"{overlaps=}")
+        logging.debug(f"add_artefacts: {all_termination_points=}")
+        logging.debug(
+            f"add_artefacts: Overlap between activation and termination points = {overlaps}"
+        )
         if len(overlaps):
             return (False, ERROR_MESSAGE_ACTIVATION_CLASH)
 
@@ -67,9 +71,9 @@ class Game:
         }
         self.activation_points_map.update(new_activation_points)
         self.termination_points = set(all_termination_points)
-        # print(f"{self.termination_points=}")
+        logging.debug(f"add_artefacts: {self.termination_points=}")
 
-        # record lucky positions 1 or 2 positions aways from snakes
+        # Record lucky positions (1 or 2 positions aways from snakes)
         # TODO:  Exclude positions with snake's head from this lucky positions list
         for artefact in artefacts:
             if isinstance(artefact, Snake):
@@ -81,7 +85,8 @@ class Game:
                     self.lucky_positions.add(artefact.head - 1)
                     if artefact.head - 2 >= Const.BOARD_POSITION_MIN:
                         self.lucky_positions.add(artefact.head - 2)
-        # print(f"{self.lucky_positions=}")
+        logging.debug(f"add_artefacts: {len(self.lucky_positions)=}")
+        logging.debug(f"add_artefacts: {self.lucky_positions=}")
 
         # Finally add all the artefacts to the board
         for artefact in artefacts:
@@ -162,28 +167,31 @@ class Game:
         This method moves the token on the board and also maintains
         player's own state and stats
         """
+        logging.debug(f"Moving {player.name} by {die_roll}")
         if player.token_position + die_roll > Const.BOARD_POSITION_MAX:
             # Bounce back if we are overshooting the board
             die_roll = Const.BOARD_POSITION_MAX - (player.token_position + die_roll)
-            # print(f"{player.name} bouncing back by {die_roll}")
+            logging.info(f"{player.name} bouncing back by {die_roll}")
 
         # Check if this the last lucky roll from the lucky zone
         if (
             player.token_position <= Const.BOARD_LAST_LUCKY_ZONE_BEGIN
             and player.token_position + die_roll == Const.BOARD_POSITION_MAX
         ):
-            # print(
-            #    f"{player.name} rolled a last lucky roll {die_roll} while at {player.token_position}"
-            # )
+            # TODO: Write a test for this
+            logging.info(
+                f"{player.name} rolled a last lucky roll {die_roll} while at {player.token_position}"
+            )
             player.number_of_lucky_rolls += 1
 
         player.token_position += die_roll
 
         # Check if the player missed a snake by 1 or 2 positions
         if player.token_position in self.lucky_positions:
-            # print(
-            #    f"{player.name} avoided a snake by landing on a lucky position: {player.token_position}"
-            # )
+            # TODO: Write a test for this
+            logging.info(
+                f"{player.name} avoided a snake by landing on a lucky position: {player.token_position}"
+            )
             player.number_of_lucky_rolls += 1
 
         # Act if we have arrived at the head of snake, or start of a ladder
@@ -196,14 +204,18 @@ class Game:
                 player.max_distance_slid = max(
                     artefact.distance, player.max_distance_slid
                 )
-                # print(f"{player.name} slid to {player.token_position} due to Snake")
+                logging.info(
+                    f"{player.name} encountered snake and slid {artefact.distance} units from {artefact.activation_point} to {artefact.termination_point}"
+                )
             elif isinstance(artefact, Ladder):
                 player.number_of_lucky_rolls += 1
                 player.total_distance_climbed += artefact.distance
                 player.max_distance_climbed = max(
                     artefact.distance, player.max_distance_climbed
                 )
-                # print(f"{player.name} climbed to {player.token_position} due to Ladder")
+                logging.info(
+                    f"{player.name} encountered ladder and climbed {artefact.distance} units from {artefact.activation_point} to {artefact.termination_point}"
+                )
         return die_roll
 
 
@@ -390,10 +402,29 @@ def print_simultation_statistics(game_stats: List[GameStats], number_of_players)
     return
 
 
+def setup_argument_parser() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Snake & Ladder Simulator")
+    parser.add_argument("--verbose", "-v", action="count", default=0)
+    args = parser.parse_args(sys.argv[1:])
+    return args
+
+
+def setup_logger(args: argparse.Namespace):
+    level_to_set = logging.WARNING
+    if args.verbose >= 2:
+        level_to_set = logging.DEBUG
+    elif args.verbose == 1:
+        level_to_set = logging.INFO
+    logging.basicConfig(format="%(message)s", level=level_to_set)
+
+
 def main() -> bool:
     players: List[Player] = []
     snakes: List[Artefact] = []
     ladders: List[Artefact] = []
+
+    args = setup_argument_parser()
+    setup_logger(args)
 
     # Read game configurations
     (
@@ -450,8 +481,8 @@ def main() -> bool:
     print(f"Number of players: {number_of_players}")
     print(f"Number of snakes: {len(snakes)}")
     print(f"Number of ladders: {len(ladders)}")
-    # pprint.pprint(snakes)
-    # pprint.pprint(ladders)
+    logging.debug(pprint.pformat(snakes))
+    logging.debug(pprint.pformat(ladders))
     print()
 
     # Set up the game

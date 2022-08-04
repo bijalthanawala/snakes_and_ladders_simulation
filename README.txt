@@ -11,6 +11,9 @@ REQUIREMENTS:
     - Python3
 
 
+----------
+
+
 CONFIGURE:
 All the configuration is read from this file in the root of the project:
     - game.conf
@@ -25,11 +28,27 @@ The above mentioned configuration file has a running, working set of values
 and also has instructions on how to change any.
 
 
+----------
+
+
 USAGE:
 To run, type following on the command line - while in the root of the project
 directory:
 
 python3 snake_ladder_simulation.py
+
+OR
+
+python3 snake_ladder_simulation.py --verbose
+[To see important moves]
+
+OR
+
+python3 snake_ladder_simulation.py --verbose --verbose
+[To see board configuration details and every single move]
+
+
+----------
 
 
 TEST:
