@@ -1,19 +1,8 @@
-import pytest
 from constants import Constants as Const
-from artefact import Artefact, Snake, Ladder
+from artefact import Snake, Ladder
 from player import Player
 from snake_ladder_simulation import Game
-
-
-class Mock_Die:
-    def __init__(self, rolls):
-        self.rolls = rolls
-        self.ndx = 0
-
-    def roll(self):
-        n = self.rolls[self.ndx]
-        self.ndx = (self.ndx + 1) % len(self.rolls)
-        return n
+from .mock_die import Mock_Die
 
 
 class Test_GameWithOnePlayer:
