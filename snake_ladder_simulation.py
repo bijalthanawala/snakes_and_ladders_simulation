@@ -51,8 +51,10 @@ class Game:
         all_activation_points = [
             artefact.activation_point for artefact in artefacts
         ] + list(self.activation_points_map.keys())
+        all_activation_points_unique = set(all_activation_points)
         logging.debug(f"add_artefact: {all_activation_points=}")
-        if len(all_activation_points) != len(set(all_activation_points)):
+        logging.debug(f"add_artefact: {all_activation_points_unique=}")
+        if len(all_activation_points) != len(all_activation_points_unique):
             return False, ERROR_MESSAGE_ACTIVATION_DUPLICATED
 
         # Ensure that the snakes and the ladders do not have the start and the end
@@ -62,10 +64,12 @@ class Game:
         all_termination_points = [
             artefact.termination_point for artefact in artefacts
         ] + list(self.termination_points)
-        overlaps = set(all_activation_points) & set(all_termination_points)
+        all_termination_points_unique = set(all_termination_points)
         logging.debug(f"add_artefacts: {all_termination_points=}")
+        logging.debug(f"add_artefacts: {all_termination_points_unique=}")
+        overlaps = all_activation_points_unique & all_termination_points_unique
         logging.debug(
-            f"add_artefacts: Overlap between activation and termination points = {overlaps}"
+            f"add_artefacts: Overlap between all (old and new) activation and termination points = {overlaps}"
         )
         if len(overlaps):
             return (False, ERROR_MESSAGE_ACTIVATION_CLASH)
@@ -75,8 +79,9 @@ class Game:
             artefact.activation_point: artefact for artefact in artefacts
         }
         self.activation_points_map.update(new_activation_points_map)
-        self.termination_points = set(all_termination_points)
-        logging.debug(f"add_artefacts: {self.termination_points=}")
+        self.termination_points = all_termination_points_unique
+        logging.debug(f"add_artefacts: Updated {self.activation_points_map=}")
+        logging.debug(f"add_artefacts: Updated {self.termination_points=}")
 
         # Record lucky positions (1 or 2 positions aways from snakes)
         # TODO:  Exclude positions with snake's head from this lucky positions list
