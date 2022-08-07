@@ -8,6 +8,7 @@ from constants import Constants as Const
 from player import Player
 from artefact import Artefact, Snake, Ladder
 from die import Die
+from simulation_stats import SimulationStats
 from game_stats import GameStats
 from game_exceptions import (
     get_user_friendly_error_message,
@@ -29,6 +30,7 @@ class Game:
         self.lucky_positions: Set[int] = set()
         self.curr_player_ndx: int = 0
         self.game_stats: List[GameStats] = []
+        self.sim_stats: SimulationStats = SimulationStats()
 
         for n in range(number_of_simulations):
             self.game_stats.append(GameStats())
@@ -92,7 +94,7 @@ class Game:
         if len(overlaps):
             return (False, ERROR_MESSAGE_ACTIVATION_CLASH)
 
-        # Update internal records of activation, termination and lucky positions
+        # Update internal records of activation, termination
         new_activation_points_map = {
             artefact.activation_point: artefact for artefact in artefacts
         }
@@ -309,114 +311,125 @@ def read_conf_file() -> Tuple[bool, int, int, List[List[int]], List[List[int]]]:
     )
 
 
-def print_simultation_statistics(game_stats: List[GameStats], number_of_players):
-    # TODO: Decouple calculation and printing
+def calculate_simultation_statistics(
+    game_stats: List[GameStats], sim_stats: SimulationStats
+):
     # TODO: Write test for these simulations-level calculations
-    number_of_simulations = len(game_stats)
+    sim_stats.number_of_simulations = len(game_stats)
 
     sum_number_of_win_rolls = 0
     sum_distance_climbed = 0
     sum_distance_slid = 0
     sum_unlucky_rolls = 0
     sum_lucky_rolls = 0
-    min_number_of_win_rolls = sys.maxsize
-    avg_number_of_win_rolls: float = 0.0
-    max_number_of_win_rolls = 0
-    min_distance_climbed = sys.maxsize
-    avg_distance_climbed: float = 0.0
-    max_distance_climbed = 0
-    min_distance_slid = sys.maxsize
-    avg_distance_slid: float = 0.0
-    max_distance_slid = 0
-    biggest_climb = 0
-    biggest_slide = 0
-    min_unlucky_rolls = sys.maxsize
-    avg_unlucky_rolls: float = 0.0
-    max_unlucky_rolls = 0
-    min_lucky_rolls = sys.maxsize
-    avg_lucky_rolls: float = 0.0
-    max_lucky_rolls = 0
-    max_streak = [0]
+
     for game_stat in game_stats:
-        # print(f"{game_stat}")
-        min_number_of_win_rolls = min(
-            game_stat.game_number_of_rolls_to_win, min_number_of_win_rolls
+        sim_stats.min_number_of_win_rolls = min(
+            game_stat.game_number_of_rolls_to_win, sim_stats.min_number_of_win_rolls
         )
-        max_number_of_win_rolls = max(
-            game_stat.game_number_of_rolls_to_win, max_number_of_win_rolls
+        sim_stats.max_number_of_win_rolls = max(
+            game_stat.game_number_of_rolls_to_win, sim_stats.max_number_of_win_rolls
         )
         sum_number_of_win_rolls += game_stat.game_number_of_rolls_to_win
 
-        min_distance_climbed = min(
-            game_stat.game_total_distance_climbed, min_distance_climbed
+        sim_stats.min_distance_climbed = min(
+            game_stat.game_total_distance_climbed, sim_stats.min_distance_climbed
         )
-        max_distance_climbed = max(
-            game_stat.game_total_distance_climbed, max_distance_climbed
+        sim_stats.max_distance_climbed = max(
+            game_stat.game_total_distance_climbed, sim_stats.max_distance_climbed
         )
         sum_distance_climbed += game_stat.game_total_distance_climbed
 
-        min_distance_slid = min(game_stat.game_total_distance_slid, min_distance_slid)
-        max_distance_slid = max(game_stat.game_total_distance_slid, max_distance_slid)
+        sim_stats.min_distance_slid = min(
+            game_stat.game_total_distance_slid, sim_stats.min_distance_slid
+        )
+        sim_stats.max_distance_slid = max(
+            game_stat.game_total_distance_slid, sim_stats.max_distance_slid
+        )
         sum_distance_slid += game_stat.game_total_distance_slid
 
-        biggest_climb = max(game_stat.game_max_distance_climbed, biggest_climb)
-        biggest_slide = max(game_stat.game_max_distance_slide, biggest_slide)
+        sim_stats.biggest_climb = max(
+            game_stat.game_max_distance_climbed, sim_stats.biggest_climb
+        )
+        sim_stats.biggest_slide = max(
+            game_stat.game_max_distance_slide, sim_stats.biggest_slide
+        )
 
-        min_unlucky_rolls = min(game_stat.game_total_unlucky_rolls, min_unlucky_rolls)
-        max_unlucky_rolls = max(game_stat.game_total_unlucky_rolls, max_unlucky_rolls)
+        sim_stats.min_unlucky_rolls = min(
+            game_stat.game_total_unlucky_rolls, sim_stats.min_unlucky_rolls
+        )
+        sim_stats.max_unlucky_rolls = max(
+            game_stat.game_total_unlucky_rolls, sim_stats.max_unlucky_rolls
+        )
         sum_unlucky_rolls += game_stat.game_total_unlucky_rolls
 
-        min_lucky_rolls = min(game_stat.game_total_lucky_rolls, min_lucky_rolls)
-        max_lucky_rolls = max(game_stat.game_total_lucky_rolls, max_lucky_rolls)
+        sim_stats.min_lucky_rolls = min(
+            game_stat.game_total_lucky_rolls, sim_stats.min_lucky_rolls
+        )
+        sim_stats.max_lucky_rolls = max(
+            game_stat.game_total_lucky_rolls, sim_stats.max_lucky_rolls
+        )
         sum_lucky_rolls += game_stat.game_total_lucky_rolls
 
-        if sum(game_stat.game_max_streak) > sum(max_streak):
-            max_streak = game_stat.game_max_streak
+        if sum(game_stat.game_max_streak) > sum(sim_stats.max_streak):
+            sim_stats.max_streak = game_stat.game_max_streak
 
-    avg_number_of_win_rolls = round(sum_number_of_win_rolls / number_of_simulations, 2)
-    avg_distance_climbed = round(sum_distance_climbed / number_of_simulations, 2)
-    avg_distance_slid = round(sum_distance_slid / number_of_simulations, 2)
-    avg_unlucky_rolls = round(sum_unlucky_rolls / number_of_simulations, 2)
-    avg_lucky_rolls = round(sum_lucky_rolls / number_of_simulations, 2)
+    sim_stats.avg_number_of_win_rolls = round(
+        sum_number_of_win_rolls / sim_stats.number_of_simulations, 2
+    )
+    sim_stats.avg_distance_climbed = round(
+        sum_distance_climbed / sim_stats.number_of_simulations, 2
+    )
+    sim_stats.avg_distance_slid = round(
+        sum_distance_slid / sim_stats.number_of_simulations, 2
+    )
+    sim_stats.avg_unlucky_rolls = round(
+        sum_unlucky_rolls / sim_stats.number_of_simulations, 2
+    )
+    sim_stats.avg_lucky_rolls = round(
+        sum_lucky_rolls / sim_stats.number_of_simulations, 2
+    )
 
+
+def print_simultation_statistics(sim_stats: SimulationStats, number_of_players):
     print()
     print(
-        f"STATISTICS FOR {number_of_players} PLAYERS OVER {number_of_simulations} SIMULATION RUN(S)"
+        f"STATISTICS FOR {number_of_players} PLAYERS OVER {sim_stats.number_of_simulations} SIMULATION RUN(S)"
     )
 
     print("Winning rolls:")
-    print(f"Minimum = {min_number_of_win_rolls}")
-    print(f"Average = {avg_number_of_win_rolls}")
-    print(f"Maximum = {max_number_of_win_rolls}")
+    print(f"Minimum = {sim_stats.min_number_of_win_rolls}")
+    print(f"Average = {sim_stats.avg_number_of_win_rolls}")
+    print(f"Maximum = {sim_stats.max_number_of_win_rolls}")
 
     print()
     print("Distance climbed:")
-    print(f"Minimum = {min_distance_climbed}")
-    print(f"Average = {avg_distance_climbed}")
-    print(f"Maximum = {max_distance_climbed}")
+    print(f"Minimum = {sim_stats.min_distance_climbed}")
+    print(f"Average = {sim_stats.avg_distance_climbed}")
+    print(f"Maximum = {sim_stats.max_distance_climbed}")
 
     print()
     print("Distance slid:")
-    print(f"Minimum = {min_distance_slid}")
-    print(f"Average = {avg_distance_slid}")
-    print(f"Maximum = {max_distance_slid}")
+    print(f"Minimum = {sim_stats.min_distance_slid}")
+    print(f"Average = {sim_stats.avg_distance_slid}")
+    print(f"Maximum = {sim_stats.max_distance_slid}")
 
     print()
     print("Unlucky rolls:")
-    print(f"Minimum = {min_unlucky_rolls}")
-    print(f"Average = {avg_unlucky_rolls}")
-    print(f"Maximum = {max_unlucky_rolls}")
+    print(f"Minimum = {sim_stats.min_unlucky_rolls}")
+    print(f"Average = {sim_stats.avg_unlucky_rolls}")
+    print(f"Maximum = {sim_stats.max_unlucky_rolls}")
 
     print()
     print("Lucky rolls:")
-    print(f"Minimum = {min_lucky_rolls}")
-    print(f"Average = {avg_lucky_rolls}")
-    print(f"Maximum = {max_lucky_rolls}")
+    print(f"Minimum = {sim_stats.min_lucky_rolls}")
+    print(f"Average = {sim_stats.avg_lucky_rolls}")
+    print(f"Maximum = {sim_stats.max_lucky_rolls}")
 
     print()
-    print(f"Biggest climb = {biggest_climb}")
-    print(f"Biggest slide = {biggest_slide}")
-    print(f"Longest streak: {max_streak}")
+    print(f"Biggest climb = {sim_stats.biggest_climb}")
+    print(f"Biggest slide = {sim_stats.biggest_slide}")
+    print(f"Longest streak: {sim_stats.max_streak}")
 
     print()
     return
@@ -519,7 +532,8 @@ def main() -> bool:
         game.play(simulation_number)
         game.reset_game_state()
 
-    print_simultation_statistics(game.game_stats, number_of_players)
+    calculate_simultation_statistics(game.game_stats, game.sim_stats)
+    print_simultation_statistics(game.sim_stats, number_of_players)
 
     return True
 
