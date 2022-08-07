@@ -311,6 +311,14 @@ def read_conf_file() -> Tuple[bool, int, int, List[List[int]], List[List[int]]]:
     )
 
 
+def run_simulations(game: Game, number_of_simulations: int, print_progress=False):
+    for simulation_number in range(1, number_of_simulations + 1):
+        if print_progress:
+            print(f"Game simulation #{simulation_number} running...")
+        game.play(simulation_number)
+        game.reset_game_state()
+
+
 def calculate_simultation_statistics(
     game_stats: List[GameStats], sim_stats: SimulationStats
 ):
@@ -527,10 +535,8 @@ def main() -> bool:
         print("Please fix the configuration and re-rerun")
         return False
 
-    for simulation_number in range(1, number_of_simulations + 1):
-        print(f"Game simulation #{simulation_number} running...")
-        game.play(simulation_number)
-        game.reset_game_state()
+    # Run the simulations
+    run_simulations(game, number_of_simulations, print_progress=True)
 
     calculate_simultation_statistics(game.game_stats, game.sim_stats)
     print_simultation_statistics(game.sim_stats, number_of_players)
