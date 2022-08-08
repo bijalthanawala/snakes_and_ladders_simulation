@@ -1,5 +1,5 @@
 from random import randint
-from constants import Constants as Const
+from .constants import Constants as Const
 
 
 class Die:

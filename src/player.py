@@ -1,6 +1,6 @@
 from typing import List
 import pprint
-from constants import Constants as Const
+from .constants import Constants as Const
 
 
 class Player:

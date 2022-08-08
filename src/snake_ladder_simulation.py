@@ -4,13 +4,13 @@ import pprint
 import argparse
 import logging
 
-from constants import Constants as Const
-from player import Player
-from artefact import Artefact, Snake, Ladder
-from die import Die
-from simulation_stats import SimulationStats
-from game_stats import GameStats
-from game_exceptions import (
+from .constants import Constants as Const
+from .player import Player
+from .artefact import Artefact, Snake, Ladder
+from .die import Die
+from .simulation_stats import SimulationStats
+from .game_stats import GameStats
+from .game_exceptions import (
     get_user_friendly_error_message,
     ERROR_MESSAGE_ACTIVATION_CLASH,
     ERROR_MESSAGE_ACTIVATION_DUPLICATED,

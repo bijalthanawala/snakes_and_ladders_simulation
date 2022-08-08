@@ -1,7 +1,7 @@
-from constants import Constants as Const
-from artefact import Snake, Ladder
-from player import Player
-from snake_ladder_simulation import Game
+from src.constants import Constants as Const
+from src.artefact import Snake, Ladder
+from src.player import Player
+from src.snake_ladder_simulation import Game
 from .mock_die import Mock_Die
 
 

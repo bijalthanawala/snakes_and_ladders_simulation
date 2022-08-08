@@ -1,6 +1,6 @@
 import pprint
-from constants import Constants as Const
-from game_exceptions import (
+from .constants import Constants as Const
+from .game_exceptions import (
     EXCEPTION_ARTEFACT_INVALID_POSITION,
     EXCEPTION_ARTEFACT_LONG,
     EXCEPTION_ARTEFACT_SHORT,

@@ -1,6 +1,6 @@
 import pytest
-from constants import Constants as Const
-from game_exceptions import (
+from src.constants import Constants as Const
+from src.game_exceptions import (
     ERROR_MESSAGE_UNSUPPORTED_ARTEFACT,
     EXCEPTION_ARTEFACT_INVALID_POSITION,
     EXCEPTION_ARTEFACT_SHORT,
@@ -10,9 +10,9 @@ from game_exceptions import (
     ERROR_MESSAGE_ACTIVATION_CLASH,
     ERROR_MESSAGE_ACTIVATION_DUPLICATED,
 )
-from artefact import Artefact, Snake, Ladder
-from die import Die
-from snake_ladder_simulation import Game
+from src.artefact import Artefact, Snake, Ladder
+from src.die import Die
+from src.snake_ladder_simulation import Game
 
 
 class Test_artefacts:
