@@ -117,23 +117,27 @@ class Game:
                 return (
                     False,
                     ERROR_MESSAGE_UNSUPPORTED_ARTEFACT,
-                )  # TODO: Write test for this
+                )
 
         logging.debug(f"add_artefacts: {len(self.lucky_positions)=}")
         logging.debug(f"add_artefacts: {self.lucky_positions=}")
 
         return True, ""
 
-    def play(self, simulation_number) -> Union[Player, None]:
+    def play(self, simulation_number) -> Tuple[bool, Union[Player, None]]:
         winner: Union[Player, None] = None
         curr_streak = []
+
+        # Do not proceed, if no players are added
+        if len(self.players) == 0:
+            return (False, None)
 
         # simulation_number is expected to be 1-based
         if simulation_number < 1 or simulation_number > self.number_of_simulations:
             print(
                 f"Invalid simulation number ({simulation_number}). Expected number between 1 and {self.number_of_simulations}"
             )
-            return None
+            return (False, None)
 
         simulation_number_offset = simulation_number - 1
 
@@ -156,7 +160,7 @@ class Game:
                 curr_streak = []
 
         self.record_game_stat(winner, simulation_number_offset)
-        return winner
+        return (True, winner)
 
     def record_game_stat(self, winner: Player, simulation_number_offset):
         # TODO: Write test for game_stat calculations
@@ -241,7 +245,9 @@ class Game:
         return die_roll
 
 
-def read_conf_file() -> Tuple[bool, int, int, List[List[int]], List[List[int]]]:
+def read_conf_file() -> Tuple[
+    bool, int, int, List[List[int]], List[List[int]]
+]:  # pragma: no cover
     def str_to_int(s):
         try:
             return int(s)
@@ -399,7 +405,9 @@ def calculate_simultation_statistics(
     )
 
 
-def print_simultation_statistics(sim_stats: SimulationStats, number_of_players):
+def print_simultation_statistics(
+    sim_stats: SimulationStats, number_of_players
+):  # pragma: no cover
     print()
     print(
         f"STATISTICS FOR {number_of_players} PLAYERS OVER {sim_stats.number_of_simulations} SIMULATION RUN(S)"
@@ -443,14 +451,14 @@ def print_simultation_statistics(sim_stats: SimulationStats, number_of_players):
     return
 
 
-def setup_argument_parser() -> argparse.Namespace:
+def setup_argument_parser() -> argparse.Namespace:  # pragma: no cover
     parser = argparse.ArgumentParser(description="Snake & Ladder Simulator")
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args(sys.argv[1:])
     return args
 
 
-def setup_logger(args: argparse.Namespace):
+def setup_logger(args: argparse.Namespace):  # pragma: no cover
     level_to_set = logging.WARNING
     if args.verbose >= 2:
         level_to_set = logging.DEBUG
@@ -459,7 +467,7 @@ def setup_logger(args: argparse.Namespace):
     logging.basicConfig(format="%(message)s", level=level_to_set)
 
 
-def main() -> bool:
+def main() -> bool:  # pragma: no cover
     players: List[Player] = []
     snakes: List[Artefact] = []
     ladders: List[Artefact] = []
@@ -544,5 +552,5 @@ def main() -> bool:
     return True
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()

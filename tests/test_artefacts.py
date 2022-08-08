@@ -1,6 +1,7 @@
 import pytest
 from constants import Constants as Const
 from game_exceptions import (
+    ERROR_MESSAGE_UNSUPPORTED_ARTEFACT,
     EXCEPTION_ARTEFACT_INVALID_POSITION,
     EXCEPTION_ARTEFACT_SHORT,
     EXCEPTION_ARTEFACT_LONG,
@@ -9,7 +10,6 @@ from game_exceptions import (
     ERROR_MESSAGE_ACTIVATION_CLASH,
     ERROR_MESSAGE_ACTIVATION_DUPLICATED,
 )
-
 from artefact import Artefact, Snake, Ladder
 from die import Die
 from snake_ladder_simulation import Game
@@ -151,3 +151,9 @@ class Test_artefacts:
         )
         assert isSuccess == False
         assert error_message == ERROR_MESSAGE_ACTIVATION_CLASH
+
+    def test_add_artefact_invalid_generic(self, game: Game):
+        generic_artefact = Artefact(activation_point=1, termination_point=20)
+        isSuccess, error_message = game.add_artefacts([generic_artefact])
+        assert isSuccess == False
+        assert error_message == ERROR_MESSAGE_UNSUPPORTED_ARTEFACT

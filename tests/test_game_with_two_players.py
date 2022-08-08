@@ -7,6 +7,7 @@ from .mock_die import Mock_Die
 
 class Test_GameWithTwoPlayers:
     def test_two_player_winner_with_no_snake_no_ladder(self):
+        winner: Player = None
         mock_rolls = [1, 5] * 20
 
         game = Game(Mock_Die(mock_rolls), number_of_simulations=1)
@@ -14,7 +15,7 @@ class Test_GameWithTwoPlayers:
         player2: Player = Player("P2")
         game.add_players([player1, player2])
 
-        winner: Player = game.play(simulation_number=1)
+        _, winner = game.play(simulation_number=1)
 
         assert winner.name == "P2"
         assert player2.token_position == Const.BOARD_POSITION_MAX
@@ -27,6 +28,7 @@ class Test_GameWithTwoPlayers:
         assert player1.number_of_unlucky_rolls == 0
 
     def test_two_player_max_streak_with_no_snake_no_ladder(self):
+        winner: Player = None
         mock_rolls = [6, 6, 6, 6, 6, 5]  # Player 1 streak ends here
         mock_rolls += [6, 6, 6, 6, 6, 4]  # Player 2 streak ends here
         mock_rolls += [1, 2] * 33  # Twice faster Player 2 will win
@@ -36,7 +38,7 @@ class Test_GameWithTwoPlayers:
         player2: Player = Player("P2")
         game.add_players([player1, player2])
 
-        winner: Player = game.play(simulation_number=1)
+        _, winner = game.play(simulation_number=1)
 
         assert winner.name == "P2"
         assert player2.token_position == Const.BOARD_POSITION_MAX
