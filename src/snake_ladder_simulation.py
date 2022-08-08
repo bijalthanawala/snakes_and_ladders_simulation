@@ -1,6 +1,5 @@
 import sys
 from typing import Union, List, Tuple, Dict, Set
-import pprint
 import argparse
 import logging
 
@@ -11,7 +10,6 @@ from .die import Die
 from .simulation_stats import SimulationStats
 from .game_stats import GameStats
 from .game_exceptions import (
-    get_user_friendly_error_message,
     ERROR_MESSAGE_ACTIVATION_CLASH,
     ERROR_MESSAGE_ACTIVATION_DUPLICATED,
     ERROR_MESSAGE_UNSUPPORTED_ARTEFACT,
@@ -244,313 +242,90 @@ class Game:
                 )
         return die_roll
 
+    def run_simulations(self, print_progress=False):
+        for simulation_number in range(1, self.number_of_simulations + 1):
+            if print_progress:
+                print(f"Game simulation #{simulation_number} running...")
+            self.play(simulation_number)
+            self.reset_game_state()
 
-def read_conf_file() -> Tuple[
-    bool, int, int, List[List[int]], List[List[int]]
-]:  # pragma: no cover
-    def str_to_int(s):
-        try:
-            return int(s)
-        except ValueError:
-            return -1
+    def calculate_simultation_statistics(self):
+        # TODO: Write test for these simulations-level calculations
+        self.sim_stats.number_of_simulations = len(self.game_stats)
 
-    CONFIG_FILENAME = "game.conf"
-    isSuccess: bool = False
-    number_of_simulations: int = 0
-    number_of_players: int = 0
-    snakes_conf: List[List[int]] = []
-    ladders_conf: List[List[int]] = []
-    try:
-        with open(CONFIG_FILENAME) as conf_file:
-            raw_config_lines = conf_file.readlines()
-    except FileNotFoundError:
-        print(f"Please supply a config file by name {CONFIG_FILENAME}")
-        return (
-            isSuccess,
-            number_of_simulations,
-            number_of_players,
-            snakes_conf,
-            ladders_conf,
-        )
+        sum_number_of_win_rolls = 0
+        sum_distance_climbed = 0
+        sum_distance_slid = 0
+        sum_unlucky_rolls = 0
+        sum_lucky_rolls = 0
 
-    for line in raw_config_lines:
-        line = line.strip().split("#")[0]  # Strip away the comments
-        if not line:
-            continue
-        config = line.split("=")
-        if len(config) < 2:
-            break
-        key, value = config[0].strip().upper(), config[1].strip()
-        if key == "NUMBER_OF_SIMULATIONS":
-            number_of_simulations = str_to_int(value)
-            if number_of_simulations < 0:
-                break
-            continue
-        if key == "NUMBER_OF_PLAYERS":
-            number_of_players = str_to_int(value)
-            if number_of_players < 0:
-                break
-            continue
-        if key == "SNAKE" or key == "LADDER":
-            positions_conf = value.split(",")
-            if len(positions_conf) != 2:
-                break
-            positions = list(map(lambda x: str_to_int(x.strip()), positions_conf))
-            if positions.count(-1) != 0:
-                break
-            if key == "SNAKE":
-                snakes_conf.append(positions)
-            else:
-                ladders_conf.append(positions)
-    else:  # For-else
-        isSuccess = True
-
-    if not isSuccess:
-        print(f"Invalid configuration line: {line}")
-
-    return (
-        isSuccess,
-        number_of_simulations,
-        number_of_players,
-        snakes_conf,
-        ladders_conf,
-    )
-
-
-def run_simulations(game: Game, number_of_simulations: int, print_progress=False):
-    for simulation_number in range(1, number_of_simulations + 1):
-        if print_progress:
-            print(f"Game simulation #{simulation_number} running...")
-        game.play(simulation_number)
-        game.reset_game_state()
-
-
-def calculate_simultation_statistics(
-    game_stats: List[GameStats], sim_stats: SimulationStats
-):
-    # TODO: Write test for these simulations-level calculations
-    sim_stats.number_of_simulations = len(game_stats)
-
-    sum_number_of_win_rolls = 0
-    sum_distance_climbed = 0
-    sum_distance_slid = 0
-    sum_unlucky_rolls = 0
-    sum_lucky_rolls = 0
-
-    for game_stat in game_stats:
-        sim_stats.min_number_of_win_rolls = min(
-            game_stat.game_number_of_rolls_to_win, sim_stats.min_number_of_win_rolls
-        )
-        sim_stats.max_number_of_win_rolls = max(
-            game_stat.game_number_of_rolls_to_win, sim_stats.max_number_of_win_rolls
-        )
-        sum_number_of_win_rolls += game_stat.game_number_of_rolls_to_win
-
-        sim_stats.min_distance_climbed = min(
-            game_stat.game_total_distance_climbed, sim_stats.min_distance_climbed
-        )
-        sim_stats.max_distance_climbed = max(
-            game_stat.game_total_distance_climbed, sim_stats.max_distance_climbed
-        )
-        sum_distance_climbed += game_stat.game_total_distance_climbed
-
-        sim_stats.min_distance_slid = min(
-            game_stat.game_total_distance_slid, sim_stats.min_distance_slid
-        )
-        sim_stats.max_distance_slid = max(
-            game_stat.game_total_distance_slid, sim_stats.max_distance_slid
-        )
-        sum_distance_slid += game_stat.game_total_distance_slid
-
-        sim_stats.biggest_climb = max(
-            game_stat.game_max_distance_climbed, sim_stats.biggest_climb
-        )
-        sim_stats.biggest_slide = max(
-            game_stat.game_max_distance_slide, sim_stats.biggest_slide
-        )
-
-        sim_stats.min_unlucky_rolls = min(
-            game_stat.game_total_unlucky_rolls, sim_stats.min_unlucky_rolls
-        )
-        sim_stats.max_unlucky_rolls = max(
-            game_stat.game_total_unlucky_rolls, sim_stats.max_unlucky_rolls
-        )
-        sum_unlucky_rolls += game_stat.game_total_unlucky_rolls
-
-        sim_stats.min_lucky_rolls = min(
-            game_stat.game_total_lucky_rolls, sim_stats.min_lucky_rolls
-        )
-        sim_stats.max_lucky_rolls = max(
-            game_stat.game_total_lucky_rolls, sim_stats.max_lucky_rolls
-        )
-        sum_lucky_rolls += game_stat.game_total_lucky_rolls
-
-        if sum(game_stat.game_max_streak) > sum(sim_stats.max_streak):
-            sim_stats.max_streak = game_stat.game_max_streak
-
-    sim_stats.avg_number_of_win_rolls = round(
-        sum_number_of_win_rolls / sim_stats.number_of_simulations, 2
-    )
-    sim_stats.avg_distance_climbed = round(
-        sum_distance_climbed / sim_stats.number_of_simulations, 2
-    )
-    sim_stats.avg_distance_slid = round(
-        sum_distance_slid / sim_stats.number_of_simulations, 2
-    )
-    sim_stats.avg_unlucky_rolls = round(
-        sum_unlucky_rolls / sim_stats.number_of_simulations, 2
-    )
-    sim_stats.avg_lucky_rolls = round(
-        sum_lucky_rolls / sim_stats.number_of_simulations, 2
-    )
-
-
-def print_simultation_statistics(
-    sim_stats: SimulationStats, number_of_players
-):  # pragma: no cover
-    print()
-    print(
-        f"STATISTICS FOR {number_of_players} PLAYERS OVER {sim_stats.number_of_simulations} SIMULATION RUN(S)"
-    )
-
-    print("Winning rolls:")
-    print(f"Minimum = {sim_stats.min_number_of_win_rolls}")
-    print(f"Average = {sim_stats.avg_number_of_win_rolls}")
-    print(f"Maximum = {sim_stats.max_number_of_win_rolls}")
-
-    print()
-    print("Distance climbed:")
-    print(f"Minimum = {sim_stats.min_distance_climbed}")
-    print(f"Average = {sim_stats.avg_distance_climbed}")
-    print(f"Maximum = {sim_stats.max_distance_climbed}")
-
-    print()
-    print("Distance slid:")
-    print(f"Minimum = {sim_stats.min_distance_slid}")
-    print(f"Average = {sim_stats.avg_distance_slid}")
-    print(f"Maximum = {sim_stats.max_distance_slid}")
-
-    print()
-    print("Unlucky rolls:")
-    print(f"Minimum = {sim_stats.min_unlucky_rolls}")
-    print(f"Average = {sim_stats.avg_unlucky_rolls}")
-    print(f"Maximum = {sim_stats.max_unlucky_rolls}")
-
-    print()
-    print("Lucky rolls:")
-    print(f"Minimum = {sim_stats.min_lucky_rolls}")
-    print(f"Average = {sim_stats.avg_lucky_rolls}")
-    print(f"Maximum = {sim_stats.max_lucky_rolls}")
-
-    print()
-    print(f"Biggest climb = {sim_stats.biggest_climb}")
-    print(f"Biggest slide = {sim_stats.biggest_slide}")
-    print(f"Longest streak: {sim_stats.max_streak}")
-
-    print()
-    return
-
-
-def setup_argument_parser() -> argparse.Namespace:  # pragma: no cover
-    parser = argparse.ArgumentParser(description="Snake & Ladder Simulator")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
-    args = parser.parse_args(sys.argv[1:])
-    return args
-
-
-def setup_logger(args: argparse.Namespace):  # pragma: no cover
-    level_to_set = logging.WARNING
-    if args.verbose >= 2:
-        level_to_set = logging.DEBUG
-    elif args.verbose == 1:
-        level_to_set = logging.INFO
-    logging.basicConfig(format="%(message)s", level=level_to_set)
-
-
-def main() -> bool:  # pragma: no cover
-    players: List[Player] = []
-    snakes: List[Artefact] = []
-    ladders: List[Artefact] = []
-
-    args = setup_argument_parser()
-    setup_logger(args)
-
-    # Read game configurations
-    (
-        isSuccess,
-        number_of_simulations,
-        number_of_players,
-        snakes_conf,
-        ladders_conf,
-    ) = read_conf_file()
-    if not isSuccess:
-        print("Error reading config file. Quitting")
-        return False
-
-    if number_of_players == 0:
-        print("There are no players. Quitting")
-        return False
-
-    if number_of_simulations == 0:
-        print("No simulations to run. Quitting")
-        return False
-
-    # Instantiate snakes as per the configuration
-    for head, tail in snakes_conf:
-        try:
-            snakes.append(Snake(head=head, tail=tail))
-        except Exception as exception:
-            print(
-                get_user_friendly_error_message(
-                    "Snake", exception, top=head, bottom=tail
-                )
+        for game_stat in self.game_stats:
+            self.sim_stats.min_number_of_win_rolls = min(
+                game_stat.game_number_of_rolls_to_win,
+                self.sim_stats.min_number_of_win_rolls,
             )
-            print("Please fix the configuration and re-rerun")
-            return False
-
-    # Instantiate ladders as per the configuration
-    for bottom, top in ladders_conf:
-        try:
-            ladders.append(Ladder(top=top, bottom=bottom))
-        except Exception as exception:
-            print(
-                get_user_friendly_error_message(
-                    "Ladder", exception, top=top, bottom=bottom
-                )
+            self.sim_stats.max_number_of_win_rolls = max(
+                game_stat.game_number_of_rolls_to_win,
+                self.sim_stats.max_number_of_win_rolls,
             )
-            print("Please fix the configuration and re-rerun")
-            return False
+            sum_number_of_win_rolls += game_stat.game_number_of_rolls_to_win
 
-    # Instantiate players as per the configuration
-    for n in range(1, number_of_players + 1):
-        players.append(Player(f"Player_{n}"))
+            self.sim_stats.min_distance_climbed = min(
+                game_stat.game_total_distance_climbed,
+                self.sim_stats.min_distance_climbed,
+            )
+            self.sim_stats.max_distance_climbed = max(
+                game_stat.game_total_distance_climbed,
+                self.sim_stats.max_distance_climbed,
+            )
+            sum_distance_climbed += game_stat.game_total_distance_climbed
 
-    print("CONFIGURATION:")
-    print(f"Number of simulations: {number_of_simulations}")
-    print(f"Number of players: {number_of_players}")
-    print(f"Number of snakes: {len(snakes)}")
-    print(f"Number of ladders: {len(ladders)}")
-    logging.debug(pprint.pformat(snakes))
-    logging.debug(pprint.pformat(ladders))
-    print()
+            self.sim_stats.min_distance_slid = min(
+                game_stat.game_total_distance_slid, self.sim_stats.min_distance_slid
+            )
+            self.sim_stats.max_distance_slid = max(
+                game_stat.game_total_distance_slid, self.sim_stats.max_distance_slid
+            )
+            sum_distance_slid += game_stat.game_total_distance_slid
 
-    # Set up the game
-    game = Game(Die(), number_of_simulations)
-    game.add_players(players)
-    isSuccess, err_message = game.add_artefacts(snakes + ladders)
-    if not isSuccess:
-        print(f"Error: {err_message}")
-        print("Please fix the configuration and re-rerun")
-        return False
+            self.sim_stats.biggest_climb = max(
+                game_stat.game_max_distance_climbed, self.sim_stats.biggest_climb
+            )
+            self.sim_stats.biggest_slide = max(
+                game_stat.game_max_distance_slide, self.sim_stats.biggest_slide
+            )
 
-    # Run the simulations
-    run_simulations(game, number_of_simulations, print_progress=True)
+            self.sim_stats.min_unlucky_rolls = min(
+                game_stat.game_total_unlucky_rolls, self.sim_stats.min_unlucky_rolls
+            )
+            self.sim_stats.max_unlucky_rolls = max(
+                game_stat.game_total_unlucky_rolls, self.sim_stats.max_unlucky_rolls
+            )
+            sum_unlucky_rolls += game_stat.game_total_unlucky_rolls
 
-    calculate_simultation_statistics(game.game_stats, game.sim_stats)
-    print_simultation_statistics(game.sim_stats, number_of_players)
+            self.sim_stats.min_lucky_rolls = min(
+                game_stat.game_total_lucky_rolls, self.sim_stats.min_lucky_rolls
+            )
+            self.sim_stats.max_lucky_rolls = max(
+                game_stat.game_total_lucky_rolls, self.sim_stats.max_lucky_rolls
+            )
+            sum_lucky_rolls += game_stat.game_total_lucky_rolls
 
-    return True
+            if sum(game_stat.game_max_streak) > sum(self.sim_stats.max_streak):
+                self.sim_stats.max_streak = game_stat.game_max_streak
 
-
-if __name__ == "__main__":  # pragma: no cover
-    main()
+        self.sim_stats.avg_number_of_win_rolls = round(
+            sum_number_of_win_rolls / self.sim_stats.number_of_simulations, 2
+        )
+        self.sim_stats.avg_distance_climbed = round(
+            sum_distance_climbed / self.sim_stats.number_of_simulations, 2
+        )
+        self.sim_stats.avg_distance_slid = round(
+            sum_distance_slid / self.sim_stats.number_of_simulations, 2
+        )
+        self.sim_stats.avg_unlucky_rolls = round(
+            sum_unlucky_rolls / self.sim_stats.number_of_simulations, 2
+        )
+        self.sim_stats.avg_lucky_rolls = round(
+            sum_lucky_rolls / self.sim_stats.number_of_simulations, 2
+        )
