@@ -16,8 +16,8 @@ class GameStats:
         self.game_total_distance_climbed: int = 0
         self.game_max_streak: List[int] = []
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no coverage
         return pprint.pformat(self.__dict__.copy())
 
-    def __str__(self):
+    def __str__(self):  # pragma: no coverage
         return self.__repr__()

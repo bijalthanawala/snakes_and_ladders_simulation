@@ -38,7 +38,7 @@ class Artefact:
         ):
             raise EXCEPTION_ARTEFACT_LONG
 
-    def __str__(self):
+    def __str__(self):  # pragma: no coverage
         return pprint.pformat(self.__dict__.copy())
 
 
@@ -54,7 +54,7 @@ class Snake(Artefact):
     def __repr__(self):
         return f"Snake: head={self.head} tail={self.termination_point}, length={self.distance}"
 
-    def __str__(self):
+    def __str__(self):  # pragma: no coverage
         return self.__repr__()
 
 
@@ -67,5 +67,5 @@ class Ladder(Artefact):
     def __repr__(self):
         return f"Ladder: top={self.termination_point} bottom={self.activation_point}, length={self.distance}"
 
-    def __str__(self):
+    def __str__(self):  # pragma: no coverage
         return self.__repr__()

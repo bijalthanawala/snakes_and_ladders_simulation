@@ -44,7 +44,9 @@ class EXCEPTION_SNAKE_AT_WINNING_POSITION(Exception):
         super().__init__(self.message)
 
 
-def get_user_friendly_error_message(artefact_type, exception, top, bottom):
+def get_user_friendly_error_message(
+    artefact_type, exception, top, bottom
+):  # pragma: no coverage
     exception_message = exception.message.format(artefact_type=artefact_type)
     full_message = f"Invalid {artefact_type} ({top},{bottom}): {exception_message}"
     return full_message
