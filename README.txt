@@ -35,17 +35,18 @@ USAGE:
 To run, type following on the command line - while in the root of the project
 directory:
 
-python3 snake_ladder_simulation.py
+python3 -m src.snake_ladder_simulation
+
 
 OR
 
-python3 snake_ladder_simulation.py --verbose
-[To see important moves]
+python3 -m src.snake_ladder_simulation --verbose
+[Prints the important moves]
 
 OR
 
-python3 snake_ladder_simulation.py --verbose --verbose
-[To see board configuration details and every single move]
+python3 -m src.snake_ladder_simulation --verbose --verbose
+[Prints board configuration details and every single move]
 
 
 ----------
