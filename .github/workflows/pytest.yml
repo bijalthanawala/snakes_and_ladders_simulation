@@ -17,6 +17,4 @@ jobs:
         pip install -r requirements.txt
     - name: Test with pytest
       run: |
-        pip install pytest
-        pip install pytest-cov
-        pytest --verbose --cov=.
+        pytest --verbose --cov=src
