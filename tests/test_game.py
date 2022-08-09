@@ -1,11 +1,12 @@
 from src.constants import Constants as Const
+from src.die import Die
 from src.player import Player
 from src.snake_ladder_simulation import Game
 from .mock_die import Mock_Die
 
 
 class Test_Game:
-    def test_game_play_no_player(self):
+    def test_game_play_invalid_no_player(self):
         game = Game(Mock_Die([5]), number_of_simulations=1)
         isSuccess, _ = game.play(1)
         assert isSuccess == False
@@ -38,3 +39,11 @@ class Test_Game:
         assert player2.token_position == Const.PLAYER_START_POSITION
         assert player2.number_of_rolls == 0
         assert game.curr_player_ndx == 0
+
+    def test_die(self):
+        # Can't test randomness
+        # Test 10 rolls are within the limits
+        die = Die()
+        for i in range(10):
+            roll = die.roll()
+            assert roll >= Const.DIE_ROLL_MIN and roll <= Const.DIE_ROLL_MAX

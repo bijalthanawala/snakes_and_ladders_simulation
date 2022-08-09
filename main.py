@@ -1,6 +1,6 @@
 import sys
 import pprint
-from typing import Union, List, Tuple, Dict, Set
+from typing import List, Tuple
 import argparse
 import logging
 
