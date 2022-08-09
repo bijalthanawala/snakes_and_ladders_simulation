@@ -192,10 +192,6 @@ class Game:
         player's own state and stats
         """
         logging.debug(f"Moving {player.name} by {die_roll}")
-        if player.token_position + die_roll > Const.BOARD_POSITION_MAX:
-            # Bounce back if we are overshooting the board
-            die_roll = Const.BOARD_POSITION_MAX - (player.token_position + die_roll)
-            logging.info(f"{player.name} bouncing back by {die_roll}")
 
         # Check if this the last lucky roll from the lucky zone
         if (
@@ -208,7 +204,17 @@ class Game:
             )
             player.number_of_lucky_rolls += 1
 
-        player.token_position += die_roll
+        if player.token_position + die_roll > Const.BOARD_POSITION_MAX:
+            # Bounce back if we are overshooting the board
+            player.token_position = (
+                Const.BOARD_POSITION_MAX
+                - die_roll
+                + (Const.BOARD_POSITION_MAX - player.token_position)
+            )
+            logging.info(f"{player.name} bounced back to {player.token_position}")
+            print(f"{player.name} bounced back to {player.token_position}")
+        else:
+            player.token_position += die_roll
 
         # Check if the player missed a snake by 1 or 2 positions
         if player.token_position in self.lucky_positions:
@@ -240,7 +246,7 @@ class Game:
                 logging.info(
                     f"{player.name} encountered ladder and climbed {artefact.distance} units from {artefact.activation_point} to {artefact.termination_point}"
                 )
-        return die_roll
+        return player.token_position
 
     def run_simulations(self, print_progress=False):
         for simulation_number in range(1, self.number_of_simulations + 1):

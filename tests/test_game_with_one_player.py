@@ -118,3 +118,9 @@ class Test_GameWithOnePlayer:
         assert player1.token_position == Const.BOARD_POSITION_MAX
         assert player1.number_of_rolls == len(mock_rolls)
         assert player1.max_streak == [6, 6, 6, 6, 4]
+
+    def test_one_player_bounce_back(self):
+        game, player1 = self.prepare_test([1], number_of_simulations=1)
+        player1.token_position = Const.BOARD_POSITION_MAX - 2
+        game.move_token(player1, 5)
+        assert player1.token_position == Const.BOARD_POSITION_MAX - 5 + 2
