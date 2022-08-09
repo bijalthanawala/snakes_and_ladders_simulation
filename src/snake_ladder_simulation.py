@@ -195,7 +195,7 @@ class Game:
 
         # Check if this the last lucky roll from the lucky zone
         if (
-            player.token_position <= Const.BOARD_LAST_LUCKY_ZONE_BEGIN
+            player.token_position >= Const.BOARD_LAST_LUCKY_ZONE_BEGIN
             and player.token_position + die_roll == Const.BOARD_POSITION_MAX
         ):
             # TODO: Write a test for this
@@ -212,7 +212,6 @@ class Game:
                 + (Const.BOARD_POSITION_MAX - player.token_position)
             )
             logging.info(f"{player.name} bounced back to {player.token_position}")
-            print(f"{player.name} bounced back to {player.token_position}")
         else:
             player.token_position += die_roll
 

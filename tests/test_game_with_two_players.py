@@ -20,12 +20,9 @@ class Test_GameWithTwoPlayers:
         assert winner.name == "P2"
         assert player2.token_position == Const.BOARD_POSITION_MAX
         assert player2.number_of_rolls == 20
-        assert player2.number_of_lucky_rolls == 0
-        assert player2.number_of_unlucky_rolls == 0
 
         assert player1.token_position == 20
-        assert player1.number_of_lucky_rolls == 0
-        assert player1.number_of_unlucky_rolls == 0
+        assert player1.number_of_rolls == 20
 
     def test_two_player_max_streak_with_no_snake_no_ladder(self):
         winner: Player = None
