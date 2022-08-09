@@ -33,7 +33,7 @@ class Game:
         for n in range(number_of_simulations):
             self.game_stats.append(GameStats())
 
-    def reset_game_state(self) -> None:
+    def reset_player_state(self) -> None:
         self.curr_player_ndx = 0
 
         for player in self.players:
@@ -157,7 +157,6 @@ class Game:
                 self.curr_player_ndx = (self.curr_player_ndx + 1) % len(self.players)
                 curr_streak = []
 
-        self.record_game_stat(winner, simulation_number_offset)
         return (True, winner)
 
     def record_game_stat(self, winner: Player, simulation_number_offset):
@@ -248,11 +247,17 @@ class Game:
         return player.token_position
 
     def run_simulations(self, print_progress=False):
+        isSuccess: bool = False
+        winner: Player = None
         for simulation_number in range(1, self.number_of_simulations + 1):
             if print_progress:
                 print(f"Game simulation #{simulation_number} running...")
-            self.play(simulation_number)
-            self.reset_game_state()
+            isSuccess, winner = self.play(simulation_number)
+            if isSuccess:
+                self.record_game_stat(
+                    winner, simulation_number_offset=simulation_number - 1
+                )
+            self.reset_player_state()
 
     def calculate_simultation_statistics(self):
         # TODO: Write test for these simulations-level calculations

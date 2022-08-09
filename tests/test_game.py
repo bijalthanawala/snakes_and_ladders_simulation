@@ -18,7 +18,7 @@ class Test_Game:
         isSuccess, _ = game.play(4)
         assert isSuccess == False
 
-    def test_reset_game_state(self):
+    def test_reset_player_state(self):
         game = Game(Mock_Die([5, 1]), number_of_simulations=1)
         player1: Player = Player("P1")
         player2: Player = Player("P2")
@@ -32,7 +32,7 @@ class Test_Game:
         assert player2.number_of_rolls == 19
         assert game.curr_player_ndx == 1
 
-        game.reset_game_state()
+        game.reset_player_state()
 
         assert player1.token_position == Const.PLAYER_START_POSITION
         assert player1.number_of_rolls == 0

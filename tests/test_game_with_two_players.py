@@ -35,7 +35,8 @@ class Test_GameWithTwoPlayers:
         player2: Player = Player("P2")
         game.add_players([player1, player2])
 
-        _, winner = game.play(simulation_number=1)
+        isSuccess, winner = game.play(simulation_number=1)
+        assert isSuccess == True
 
         assert winner.name == "P2"
         assert player2.token_position == Const.BOARD_POSITION_MAX
@@ -46,5 +47,6 @@ class Test_GameWithTwoPlayers:
         assert player2.number_of_rolls == 39
         assert player1.max_streak == [6, 6, 6, 6, 6, 5]
 
+        game.record_game_stat(winner, simulation_number_offset=0)
         assert game.game_stats[0].game_number_of_rolls_to_win == 39
         assert game.game_stats[0].game_max_streak == [6, 6, 6, 6, 6, 5]
