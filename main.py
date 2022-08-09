@@ -6,10 +6,10 @@ import logging
 
 from src.artefact import Artefact, Snake, Ladder
 from src.player import Player
-from src.game_exceptions import get_user_friendly_error_message
 from src.die import Die
 from src.snake_ladder_simulation import Game
 from src.simulation_stats import SimulationStats
+from src.game_exceptions import EXCEPTION_SNAKE_LADDER_SIMULATOR
 
 
 def print_simultation_statistics(sim_stats: SimulationStats, number_of_players):
@@ -174,12 +174,8 @@ def main() -> bool:
     for head, tail in snakes_conf:
         try:
             snakes.append(Snake(head=head, tail=tail))
-        except Exception as exception:
-            print(
-                get_user_friendly_error_message(
-                    "Snake", exception, top=head, bottom=tail
-                )
-            )
+        except EXCEPTION_SNAKE_LADDER_SIMULATOR as exception_sim:
+            print(exception_sim.message)
             print("Please fix the configuration and re-rerun")
             return False
 
@@ -187,12 +183,8 @@ def main() -> bool:
     for bottom, top in ladders_conf:
         try:
             ladders.append(Ladder(top=top, bottom=bottom))
-        except Exception as exception:
-            print(
-                get_user_friendly_error_message(
-                    "Ladder", exception, top=top, bottom=bottom
-                )
-            )
+        except EXCEPTION_SNAKE_LADDER_SIMULATOR as exception_sim:
+            print(exception_sim.message)
             print("Please fix the configuration and re-rerun")
             return False
 

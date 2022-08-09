@@ -1,12 +1,12 @@
 import pytest
 from src.constants import Constants as Const
 from src.game_exceptions import (
-    ERROR_MESSAGE_UNSUPPORTED_ARTEFACT,
     EXCEPTION_ARTEFACT_INVALID_POSITION,
     EXCEPTION_ARTEFACT_SHORT,
     EXCEPTION_ARTEFACT_LONG,
     EXCEPTION_ARTEFACT_INVERSE,
     EXCEPTION_SNAKE_AT_WINNING_POSITION,
+    ERROR_MESSAGE_UNSUPPORTED_ARTEFACT,
     ERROR_MESSAGE_ACTIVATION_CLASH,
     ERROR_MESSAGE_ACTIVATION_DUPLICATED,
 )
@@ -48,6 +48,7 @@ class Test_artefacts:
     def test_artefact_spans_board(self):
         with pytest.raises(Exception) as excinfo:
             _ = Artefact(
+                artefact_type="Snake/Ladder",
                 activation_point=Const.BOARD_POSITION_MIN,
                 termination_point=Const.BOARD_POSITION_MAX,
             )
@@ -70,7 +71,7 @@ class Test_artefacts:
     )
     def test_artefact_valid_length(self, valid_length):
         try:
-            _ = Artefact(**valid_length)
+            _ = Artefact("Snake/Ladder", **valid_length)
         except Exception as exception:
             assert False, f"Artefact instantiation failed: {exception}"
 
@@ -86,7 +87,7 @@ class Test_artefacts:
     )
     def test_artefact_invalid_length(self, invalid_short_length):
         with pytest.raises(Exception) as excinfo:
-            _ = Artefact(**invalid_short_length)
+            _ = Artefact("Snake/Ladder", **invalid_short_length)
         assert excinfo.type == EXCEPTION_ARTEFACT_SHORT
 
     @pytest.mark.parametrize(
@@ -98,7 +99,7 @@ class Test_artefacts:
     )
     def test_artefact_invalid_position(self, invalid_position):
         with pytest.raises(Exception) as excinfo:
-            _ = Artefact(**invalid_position)
+            _ = Artefact("Snake/Ladder", **invalid_position)
         assert excinfo.type == EXCEPTION_ARTEFACT_INVALID_POSITION
 
     def test_add_artefacts_valid(self, game):
@@ -153,7 +154,9 @@ class Test_artefacts:
         assert error_message == ERROR_MESSAGE_ACTIVATION_CLASH
 
     def test_add_artefact_invalid_generic(self, game: Game):
-        generic_artefact = Artefact(activation_point=1, termination_point=20)
+        generic_artefact = Artefact(
+            "Snake/Ladder", activation_point=1, termination_point=20
+        )
         isSuccess, error_message = game.add_artefacts([generic_artefact])
         assert isSuccess == False
         assert error_message == ERROR_MESSAGE_UNSUPPORTED_ARTEFACT
