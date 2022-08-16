@@ -48,8 +48,8 @@ def print_simultation_statistics(sim_stats: SimulationStats, number_of_players):
     print(f"Maximum = {sim_stats.max_lucky_rolls}")
 
     print()
-    print(f"Biggest climb = {sim_stats.biggest_climb}")
-    print(f"Biggest slide = {sim_stats.biggest_slide}")
+    print(f"Biggest climb in a streak = {sim_stats.biggest_climb_in_a_streak}")
+    print(f"Biggest slide in a streak = {sim_stats.biggest_slide_in_a_streak}")
     print(f"Longest streak: {sim_stats.max_streak}")
 
     print()

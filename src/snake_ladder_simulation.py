@@ -125,6 +125,10 @@ class Game:
     def play(self, simulation_number) -> Tuple[bool, Union[Player, None]]:
         winner: Union[Player, None] = None
         curr_streak = []
+        distance_slid: int = 0
+        distance_climbed: int = 0
+        total_distance_slid_in_a_streak: int = 0
+        total_distance_climbed_in_a_streak: int = 0
 
         # Do not proceed, if no players are added
         if len(self.players) == 0:
@@ -137,8 +141,6 @@ class Game:
             )
             return (False, None)
 
-        simulation_number_offset = simulation_number - 1
-
         while True:
             winner = self.spot_winner()
             if winner:
@@ -147,13 +149,28 @@ class Game:
             curr_player: Player = self.players[self.curr_player_ndx]
 
             die_roll = self.die.roll()
-            self.move_token(curr_player, die_roll)
+            distance_climbed, distance_slid = self.move_token(curr_player, die_roll)
 
             curr_player.number_of_rolls += 1
             curr_streak.append(die_roll)
+            total_distance_climbed_in_a_streak += distance_climbed
+            total_distance_slid_in_a_streak += distance_slid
+
+            # Case: die roll is not the 'repeat' roll
             if die_roll != Const.DIE_ROLL_REPEAT:
                 if sum(curr_streak) > sum(curr_player.max_streak):
                     curr_player.max_streak = curr_streak
+                curr_player.biggest_climb_in_a_streak = max(
+                    total_distance_climbed_in_a_streak,
+                    curr_player.biggest_climb_in_a_streak,
+                )
+                curr_player.biggest_slide_in_a_streak = max(
+                    total_distance_slid_in_a_streak,
+                    curr_player.biggest_slide_in_a_streak,
+                )
+                total_distance_slid_in_a_streak = 0
+                total_distance_climbed_in_a_streak = 0
+                # Switch to the next player
                 self.curr_player_ndx = (self.curr_player_ndx + 1) % len(self.players)
                 curr_streak = []
 
@@ -167,15 +184,33 @@ class Game:
         for player in self.players:
             if sum(player.max_streak) > sum(game_stat.game_max_streak):
                 game_stat.game_max_streak = player.max_streak
+
+            # rolls
             game_stat.game_total_lucky_rolls += player.number_of_lucky_rolls
             game_stat.game_total_unlucky_rolls += player.number_of_unlucky_rolls
+
+            # distance slid
             game_stat.game_total_distance_slid += player.total_distance_slid
-            game_stat.game_total_distance_climbed += player.total_distance_climbed
+            game_stat.game_min_distance_slide = min(
+                player.min_distance_slid, game_stat.game_min_distance_slide
+            )
             game_stat.game_max_distance_slide = max(
                 player.max_distance_slid, game_stat.game_max_distance_slide
             )
+            game_stat.biggest_slide_in_a_streak = max(
+                player.biggest_slide_in_a_streak, game_stat.biggest_slide_in_a_streak
+            )
+
+            # distance climbed
+            game_stat.game_total_distance_climbed += player.total_distance_climbed
+            game_stat.game_min_distance_climbed = min(
+                player.min_distance_climbed, game_stat.game_min_distance_climbed
+            )
             game_stat.game_max_distance_climbed = max(
                 player.max_distance_climbed, game_stat.game_max_distance_climbed
+            )
+            game_stat.biggest_climb_in_a_streak = max(
+                player.biggest_climb_in_a_streak, game_stat.biggest_climb_in_a_streak
             )
 
     def spot_winner(self) -> Union[Player, None]:  # TODO: Write test for this
@@ -185,19 +220,21 @@ class Game:
                 return player
         return None
 
-    def move_token(self, player: Player, die_roll: int) -> int:
+    def move_token(self, player: Player, die_roll: int) -> Tuple[int, int]:
         """
         This method moves the token on the board and also maintains
         player's own state and stats
         """
         logging.debug(f"Moving {player.name} by {die_roll}")
 
+        distance_slid: int = 0
+        distance_climbed: int = 0
+
         # Check if this the last lucky roll from the lucky zone
         if (
             player.token_position >= Const.BOARD_LAST_LUCKY_ZONE_BEGIN
             and player.token_position + die_roll == Const.BOARD_POSITION_MAX
         ):
-            # TODO: Write a test for this
             logging.info(
                 f"{player.name} rolled a last lucky roll {die_roll} while at {player.token_position}"
             )
@@ -229,22 +266,30 @@ class Game:
             if isinstance(artefact, Snake):
                 player.number_of_unlucky_rolls += 1
                 player.total_distance_slid += artefact.distance
+                player.min_distance_slid = min(
+                    artefact.distance, player.min_distance_slid
+                )
                 player.max_distance_slid = max(
                     artefact.distance, player.max_distance_slid
                 )
+                distance_slid += artefact.distance
                 logging.info(
                     f"{player.name} encountered snake and slid {artefact.distance} units from {artefact.activation_point} to {artefact.termination_point}"
                 )
             elif isinstance(artefact, Ladder):
                 player.number_of_lucky_rolls += 1
                 player.total_distance_climbed += artefact.distance
+                player.min_distance_climbed = min(
+                    artefact.distance, player.min_distance_climbed
+                )
                 player.max_distance_climbed = max(
                     artefact.distance, player.max_distance_climbed
                 )
+                distance_climbed += artefact.distance
                 logging.info(
                     f"{player.name} encountered ladder and climbed {artefact.distance} units from {artefact.activation_point} to {artefact.termination_point}"
                 )
-        return player.token_position
+        return (distance_climbed, distance_slid)
 
     def run_simulations(self, print_progress=False):
         isSuccess: bool = False
@@ -260,7 +305,6 @@ class Game:
             self.reset_player_state()
 
     def calculate_simultation_statistics(self):
-        # TODO: Write test for these simulations-level calculations
         self.sim_stats.number_of_simulations = len(self.game_stats)
 
         sum_number_of_win_rolls = 0
@@ -281,28 +325,29 @@ class Game:
             sum_number_of_win_rolls += game_stat.game_number_of_rolls_to_win
 
             self.sim_stats.min_distance_climbed = min(
-                game_stat.game_total_distance_climbed,
-                self.sim_stats.min_distance_climbed,
+                game_stat.game_min_distance_climbed, self.sim_stats.min_distance_climbed
             )
             self.sim_stats.max_distance_climbed = max(
-                game_stat.game_total_distance_climbed,
+                game_stat.game_max_distance_climbed,
                 self.sim_stats.max_distance_climbed,
             )
             sum_distance_climbed += game_stat.game_total_distance_climbed
 
             self.sim_stats.min_distance_slid = min(
-                game_stat.game_total_distance_slid, self.sim_stats.min_distance_slid
+                game_stat.game_min_distance_slide, self.sim_stats.min_distance_slid
             )
             self.sim_stats.max_distance_slid = max(
-                game_stat.game_total_distance_slid, self.sim_stats.max_distance_slid
+                game_stat.game_max_distance_slide, self.sim_stats.max_distance_slid
             )
             sum_distance_slid += game_stat.game_total_distance_slid
 
-            self.sim_stats.biggest_climb = max(
-                game_stat.game_max_distance_climbed, self.sim_stats.biggest_climb
+            self.sim_stats.biggest_climb_in_a_streak = max(
+                game_stat.biggest_climb_in_a_streak,
+                self.sim_stats.biggest_climb_in_a_streak,
             )
-            self.sim_stats.biggest_slide = max(
-                game_stat.game_max_distance_slide, self.sim_stats.biggest_slide
+            self.sim_stats.biggest_slide_in_a_streak = max(
+                game_stat.biggest_slide_in_a_streak,
+                self.sim_stats.biggest_slide_in_a_streak,
             )
 
             self.sim_stats.min_unlucky_rolls = min(
